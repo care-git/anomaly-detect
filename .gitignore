@@ -39,4 +39,7 @@ build/
 *.egg-info/
 
 # Git attributes file (used for git lfs)
-.gitattribues
+.gitattributes
+
+# Claude .md
+CLAUDE.md
