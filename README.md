@@ -43,18 +43,17 @@ anomaly-detect --help
 
 ### Example Commands
 ```bash
-# Capture 30 seconds of live traffic on eth0 network adapter
-python -m cli.main capture --interface eth0 --duration 30 --output data/captures/sample.pcap
+# Capture 30 seconds of live traffic on eth0
+anomaly-detect capture --interface eth0 --duration 30 --output data/captures/sample.pcap
 
 # Extract features from PCAP to CSV
-python -m cli.main preprocess --pcap data/captures/sample.pcap --output data/preprocessed/sample.csv
+anomaly-detect preprocess --input data/captures/sample.pcap --output data/processed/sample.csv
 
 # Train a model
-python -m cli.main train --model autoencoder --input data/preprocessed/sample.csv --output models/my_autoencoder
+anomaly-detect train --model autoencoder --input data/processed/sample.csv --output data/models/my_autoencoder
 
 # Detect anomalies using a trained model
-python -m cli.main detect --model models/my_autoencoder --model-type autoencoder --input data/preprocessed/sample.csv --output data/detection/predicted.csv
-
+anomaly-detect detect --model autoencoder --model-path data/models/my_autoencoder --input data/processed/sample.csv --output data/detection/predicted.csv
 ```
 
 ---
@@ -66,7 +65,6 @@ anomaly-detect/
 ├── config/               # YAML configuration file
 ├── core/                 # Capture, preprocessing, and dataset tools
 ├── models/               # ML model logic, base interface, loader, trainer, detector
-│   └── pretrained/       # Pretrained demonstration models
 ├── siem/                 # Wazuh alert forwarding (file/syslog integration)
 ├── utils/                # Logging, config loading, file saving, etc.
 ├── tests/                # Full pipeline testing coverage using unit test framework
@@ -99,11 +97,7 @@ MIT License - see more details [here](./LICENSE)
 
 ## Author
 
-Developed by William Jecks as a part of a final year thesis project.
-
-Supervised by Prof. Fatemeh Raji (2024 to March 2025), Jarrad Morden (March 2025 to end).
-
-Cyber Security, De Montfort University  
-p2721974@my365.dmu.ac.uk
+Developed by William Jecks as a final year thesis project.
+BSc Cyber Security, De Montfort University.
 
 ---
