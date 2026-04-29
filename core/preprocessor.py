@@ -16,7 +16,7 @@ config = get_config()
 logger = get_logger(__name__, config.get("general", {}).get("logging_level", "INFO"))
 
 
-def extract_packet_fields(pkt, last_pkt_time=None) -> None:
+def extract_packet_fields(pkt, last_pkt_time=None) -> dict:
     """
     Extracts a wide range of features from a Scapy packet.
     
@@ -146,7 +146,7 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Cleaned DataFrame with no invalid numerical values.
     """
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df = df.applymap(safe_numeric_cast) # avoid EDecimal error
+    df = df.map(safe_numeric_cast) # avoid EDecimal error
 
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
     df = df[df[numeric_cols].notna().any(axis=1)]

@@ -238,8 +238,8 @@ class AutoencoderModel(BaseModel):
             dict: Metadata including paths, threshold, and metrics.
         """
         return self.metadata or {
-            "model_type": "random_forest",
-            "model_path": os.path.join(path, "model.pkl"),
+            "model_type": "autoencoder",
+            "model_path": os.path.join(path, "model.keras"),
             "input_dim": self.input_dim,
             "evaluation_metrics": {}
         }

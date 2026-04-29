@@ -170,7 +170,7 @@ class SVMModel(BaseModel):
             dict: Metadata dictionary.
         """
         return self.metadata or {
-            "model_type": "random_forest",
+            "model_type": "svm",
             "model_path": os.path.join(path, "model.pkl"),
             "input_dim": self.input_dim,
             "evaluation_metrics": {}
