@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anomaly-detect"
-version = "1.0.9"
+version = "1.1.0"
 description = "Anomaly-Based Threat Detection Pipeline using Machine Learning"
 authors = [
   { name = "William Jecks", email = "p2721974@my365.dmu.ac.uk" }
