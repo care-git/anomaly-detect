@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore", message=".*does not have valid feature names.*
 
 import argparse
 
-import __version__
+from __version__ import __version__
 from core.capture import run_capture
 from core.preprocessor import run_preprocessor
 from core.dataset_utils import run_dataset_utils

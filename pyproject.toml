@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anomaly-detect"
-version = "1.0.6"
+version = "1.0.9"
 description = "Anomaly-Based Threat Detection Pipeline using Machine Learning"
 authors = [
   { name = "William Jecks", email = "p2721974@my365.dmu.ac.uk" }
@@ -30,7 +30,7 @@ dependencies = [
 license = {text = "MIT"}
 
 [project.urls]
-Homepage = "https://github.com/twisted-care/anomaly-detect
+Homepage = "https://github.com/twisted-care/anomaly-detect"
 
 [project.scripts]
 anomaly-detect = "cli.main:main"

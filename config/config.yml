@@ -18,14 +18,14 @@ dataset_utils:
 
 # === Training Settings ===
 training:
-  input: data/preprocessed/train.csv
+  input: data/processed/preprocessed.csv
   save_dir: data/models/
   model_type: autoencoder
   n_estimators: 100
 
 # === Detection Settings ===
 detection:
-  input_path: data/processed/test.csv
+  input_path: data/captures/capture.pcap
   model_type: autoencoder
   model_path: data/models/autoencoder/autoencoder_model
   csv_output: data/detection/detection.csv
