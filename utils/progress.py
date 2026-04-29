@@ -24,7 +24,7 @@ def tqdm_bar(iterable, desc="", unit="it", total=None, leave=True, disable=False
 @contextmanager
 def single_bar(desc="", total=1, unit="it", leave=True, disable=False):
     """
-    Context manager for single-step prgress bars.
+    Context manager for single-step progress bars.
 
     Useful for operations I can't reasonably assign an iterable for.
 

@@ -1,5 +1,3 @@
-# --- This block can be removed without affecting pipeline in any way ---
-
 # Suppress Scapy runtime warnings
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -18,8 +16,6 @@ absl.logging.set_verbosity(absl.logging.ERROR)
 
 # Suppress StandardScaler feature warning for autoencoders on live data
 warnings.filterwarnings("ignore", message=".*does not have valid feature names.*")
-
-# --- End of warning suppression block ---
 
 # cli/main.py
 

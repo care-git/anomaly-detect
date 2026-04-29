@@ -30,7 +30,7 @@ class SVMModel(BaseModel):
         Parameters:
             **kwargs: Parameters passed to sklearn's SVC.
         """
-        # Strip unrelated kwargs lke rf
+        # Strip unrelated kwargs like rf
         svm_kwargs = {k: v for k, v in kwargs.items() if k in SVC().get_params()}
         self.model = SVC(probability=True, **svm_kwargs)
         self.input_dim = None

@@ -83,7 +83,7 @@ def save_dataframe(df, path):
     """
     Saves a pandas DataFrame to a CSV file.
     
-    Paramters:
+    Parameters:
         df (pd.DataFrame): Data to save.
         path (str): Destination file path.
     """
@@ -109,7 +109,7 @@ def generate_incremented_path(base_path, extension=None):
     Generates a unique, timestamped output file path.
 
     Parameters:
-        base_path (str): Originial file path (either from cli input or `config.yml`).
+        base_path (str): Original file path (either from cli input or `config.yml`).
         extension (str, optional): Optional override file extension.
 
     Returns:

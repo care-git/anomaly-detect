@@ -90,8 +90,6 @@ def detection(model, df, model_type, model_name, model_path, output_path=None, l
     return df    
 
 
-# need to figure out way to avoid defining within a function if possible
-# and move to packet utils too if possible
 def create_packet_handler(model, model_type, model_name, model_path):
     """
     Returns a packet handler function with access to the detection context.
@@ -103,7 +101,7 @@ def create_packet_handler(model, model_type, model_name, model_path):
         try:
             df = extract_packet_features(pkt)
             if df is None or df.empty:
-                    return  # skip unprocessable packets
+                return  # skip unprocessable packets
         
             df = clean_dataframe(df)
             if df.empty:
