@@ -186,7 +186,7 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
             if len(batch_rows) >= batch_size:
                 df_batch = pd.DataFrame(batch_rows)
                 if label is not None:
-                    df_batch["anomaly"] = label
+                    df_batch["label"] = label
                 df_clean = clean_dataframe(df_batch)
                 df_list.append(df_clean)
                 batch_rows = []
@@ -195,7 +195,7 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
         if batch_rows:
             df_batch = pd.DataFrame(batch_rows)
             if label is not None:
-                df_batch["anomaly"] = label
+                df_batch["label"] = label
             df_clean = clean_dataframe(df_batch)
             df_list.append(df_clean)
             

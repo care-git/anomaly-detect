@@ -12,7 +12,7 @@ Designed for use by security analysts, researchers, and engineers in need of a p
 - **Live or offline packet capture** using Scapy
 - **Custom preprocessing** with detailed packet-level feature extraction
 - **Modular training pipeline** with support for pluggable models
-- **Visual evaluation tools** (ROC, confusion matrix, reconstruction loss)
+- **Visual evaluation tools** (classification metrics bar chart, confusion matrix)
 - **Wazuh SIEM integration** for alert forwarding via file or syslog
 - Fully customisable via YAML config
 - Unified logging and versioning support
@@ -83,7 +83,7 @@ python -m unittest discover tests
 ### SIEM Integration
 
 Alerts are exported in Wazuh-compatible format for ingestion into your SIEM. Logs can be forwarded to:
-- Local file (default: `data/logs/ml_alerts.log`)
+- Local file (default: `data/logs/alerts.log`)
 - Syslog over UDP
 - Both (configurable)
 
