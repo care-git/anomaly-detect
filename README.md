@@ -28,7 +28,7 @@ conda env create -f environment.yml
 conda activate anomaly-detect
 ```
 
-### `pip` (Alternative)
+### `pip` (alternative)
 ```bash
 pip install .
 ```
