@@ -97,7 +97,7 @@ MIT License - see more details [here](./LICENSE)
 
 ## Author
 
-Developed by William Jecks as a final year thesis project.
+Originally developed by William Jecks as a final year thesis project.
 BSc Cyber Security, De Montfort University.
 
 ---

@@ -37,6 +37,3 @@ notebooks/
 dist/
 build/
 *.egg-info/
-
-# Git attributes file (used for git lfs)
-.gitattributes

@@ -22,6 +22,8 @@ training:
   save_dir: data/models/
   model_type: autoencoder
   n_estimators: 100
+  svm_linear: false    # Use LinearSVC instead of SVC (faster on large datasets)
+  cv_folds: 5          # Stratified k-fold cross-validation for supervised models (0 = disabled)
 
 # === Detection Settings ===
 detection:
