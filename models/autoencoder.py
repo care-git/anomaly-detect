@@ -10,7 +10,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import EarlyStopping
 
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
 
 from models.base_model import BaseModel
 from utils.file_saver import save_keras_model, save_pickle, save_json, ensure_dir
@@ -84,13 +84,15 @@ class AutoencoderModel(BaseModel):
 
         logger.info("Training Autoencoder on %d samples with %d features", X.shape[0], X.shape[1])
 
-        patience = 5
-        max_epochs = 100
+        cfg = get_config().get("training", {})
+        patience = cfg.get("ae_patience", 5)
+        max_epochs = cfg.get("ae_epochs", 100)
+        batch_size = cfg.get("ae_batch_size", 32)
         with single_bar("Training Autoencoder", unit="stage") as update:
             self.model.fit(
                 X_scaled, X_scaled,
                 epochs=max_epochs,
-                batch_size=32,
+                batch_size=batch_size,
                 validation_data=(X_val_scaled, X_val_scaled) if X_val_scaled is not None else None,
                 callbacks=[
                     EarlyStopping(monitor='loss', patience=patience, restore_best_weights=True),
@@ -153,24 +155,33 @@ class AutoencoderModel(BaseModel):
 
         recon = self.model.predict(X_scaled, verbose=0)
         mse = np.mean(np.square(X_scaled - recon), axis=1)
+        mae = np.mean(np.abs(X_scaled - recon), axis=1)
 
         logger.info("[Eval MSE] mean: %.6f | std: %.6f", mse.mean(), mse.std())
+        logger.info("[Eval MAE] mean: %.6f | std: %.6f", mae.mean(), mae.std())
 
         results = {
-            "mse_mean": mse.mean(),
-            "mse_std": mse.std(),
+            "mse_mean": float(mse.mean()),
+            "mse_std": float(mse.std()),
+            "mse_p95": float(np.percentile(mse, 95)),
+            "mae_mean": float(mae.mean()),
+            "mae_std": float(mae.std()),
         }
 
         if y_true is not None:
+            y_true = np.asarray(y_true)
             y_pred = (mse > self.threshold).astype(int)
-            
+
             results.update({
                 "accuracy": accuracy_score(y_true, y_pred),
                 "precision": precision_score(y_true, y_pred, zero_division=0),
                 "recall": recall_score(y_true, y_pred, zero_division=0),
                 "f1_score": f1_score(y_true, y_pred, zero_division=0),
+                "roc_auc": float(roc_auc_score(y_true, mse)) if len(np.unique(y_true)) > 1 else None,
                 "avg_mse_normal": float(mse[y_true == 0].mean()) if (y_true == 0).any() else None,
                 "avg_mse_anomalous": float(mse[y_true == 1].mean()) if (y_true == 1).any() else None,
+                "avg_mae_normal": float(mae[y_true == 0].mean()) if (y_true == 0).any() else None,
+                "avg_mae_anomalous": float(mae[y_true == 1].mean()) if (y_true == 1).any() else None,
             })
 
         return results

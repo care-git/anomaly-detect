@@ -157,10 +157,11 @@ def run_dataset_utils(args) -> None:
     This dispatcher handles the flow of the following dataset transformations:
         - Combining multiple datasets.
         - Balancing class distribution.
-        - Spltting into test/train sets.
+        - Splitting into test/train sets.
 
     Uses config defaults and safe file naming when needed.
     """
+    config = get_config()
     default_output = config['dataset_utils']['output_path']
     output_path = args.output or safe_save_path(default_output)
 

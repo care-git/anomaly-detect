@@ -3,8 +3,10 @@
 import os
 import joblib
 import json
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+import numpy as np
+from sklearn.svm import SVC, LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
 from models.base_model import BaseModel
 from utils.metrics_utils import plot_classification_report
@@ -13,33 +15,49 @@ from utils.file_saver import save_pickle, save_json, ensure_dir
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
-config = get_config()
-logger = get_logger(__name__, config.get("general", {}).get("logging_level", "INFO"))
+logger = get_logger(__name__, "INFO")
+
 
 class SVMModel(BaseModel):
     """
     Support Vector Machine classifier implementation of BaseModel.
 
-    Suitable for supervised learning on labelled datasets.
+    Supports two backends selected via config `training.svm_kernel`:
+        - 'linear': uses LinearSVC wrapped in CalibratedClassifierCV for
+          probability estimates. Scales to large datasets (O(n) training time).
+        - any other value (e.g. 'rbf', 'poly'): uses SVC with that kernel.
+          More expressive but O(n²) training time — avoid on large datasets.
     """
 
     def __init__(self, **kwargs):
         """
-        Initialises the SVM model with configurable parameters.
+        Initialises the SVM model shell. The backend (SVC or LinearSVC) is
+        selected during train() based on the config value of svm_kernel.
 
         Parameters:
-            **kwargs: Parameters passed to sklearn's SVC.
+            **kwargs: Passed to SVC if the rbf/poly backend is used. Unrelated
+                      keys such as 'input_dim' are silently dropped.
         """
-        # Strip unrelated kwargs like rf
-        svm_kwargs = {k: v for k, v in kwargs.items() if k in SVC().get_params()}
-        self.model = SVC(probability=True, **svm_kwargs)
+        self._init_kwargs = {k: v for k, v in kwargs.items() if k in SVC().get_params()}
+        self.model = None
         self.input_dim = None
         self.metadata = {}
-        logger.info("Initialised SVM model with params: %s", svm_kwargs)
+        self._use_linear = False
+
+    def _build_model(self, use_linear: bool):
+        """Constructs the appropriate sklearn estimator."""
+        if use_linear:
+            base = LinearSVC(max_iter=2000)
+            return CalibratedClassifierCV(base, cv=3)
+        return SVC(probability=True, **self._init_kwargs)
 
     def train(self, X, y=None, **kwargs):
         """
         Trains the SVM model on the labelled data.
+
+        The backend is chosen from config `training.svm_kernel`. Setting it to
+        'linear' instantiates a LinearSVC (via CalibratedClassifierCV for
+        probability estimates); any other value uses SVC with that kernel.
 
         Parameters:
             X (np.ndarray or pd.DataFrame): Input features.
@@ -48,9 +66,15 @@ class SVMModel(BaseModel):
         """
         if y is None:
             raise ValueError("Supervised training requires labels (y).")
-        
+
+        config = get_config()
+        svm_kernel = config.get("training", {}).get("svm_kernel", "rbf")
+        self._use_linear = svm_kernel == "linear"
         self.input_dim = X.shape[1]
-        logger.info("Training SVM model on data with %d samples", len(X))
+        self.model = self._build_model(self._use_linear)
+
+        backend_name = "LinearSVC (CalibratedClassifierCV)" if self._use_linear else f"SVC (kernel={svm_kernel})"
+        logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
 
         with single_bar("Training SVM", unit="step") as update:
             self.model.fit(X, y)
@@ -79,7 +103,7 @@ class SVMModel(BaseModel):
             log_metrics (bool): Whether to log the classification report.
 
         Returns:
-            dict: Evaluation metrics including accuracy, precision, recall, and F1 score.
+            dict: Evaluation metrics including accuracy, precision, recall, F1 score, and ROC-AUC.
         """
         if self.model is None:
             raise ValueError("Model not trained or loaded.")
@@ -92,13 +116,22 @@ class SVMModel(BaseModel):
             "f1_score": f1_score(y_true, y_pred, zero_division=0),
         }
 
+        # ROC-AUC via probability estimates when available, decision function otherwise.
+        if hasattr(self.model, "predict_proba"):
+            y_score = self.model.predict_proba(X)[:, 1]
+        elif hasattr(self.model, "decision_function"):
+            y_score = self.model.decision_function(X)
+        else:
+            y_score = y_pred
+        metrics["roc_auc"] = float(roc_auc_score(y_true, y_score)) if len(np.unique(y_true)) > 1 else None
+
         logger.info("SVM model evaluation complete.")
 
         if log_metrics:
             logger.info("SVM model evaluation:\n%s", classification_report(y_true, y_pred, zero_division=0))
 
         return metrics
-    
+
     def plot(self, X_val, y_val, output_path=None, title=None):
         """
         Generates and saves a classification report plot.
@@ -132,6 +165,7 @@ class SVMModel(BaseModel):
             "model_type": "svm",
             "model_path": model_path,
             "input_dim": self.input_dim,
+            "use_linear": self._use_linear,
             "evaluation_metrics": metrics or {}
         }
 
@@ -156,6 +190,7 @@ class SVMModel(BaseModel):
             with open(metadata_path, "r") as f:
                 self.metadata = json.load(f)
             self.input_dim = self.metadata.get("input_dim")
+            self._use_linear = self.metadata.get("use_linear", False)
 
         logger.info("SVM model loaded from: %s", path)
 

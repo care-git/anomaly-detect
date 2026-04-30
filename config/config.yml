@@ -22,8 +22,15 @@ training:
   save_dir: data/models/
   model_type: autoencoder
   n_estimators: 100
-  svm_linear: false    # Use LinearSVC instead of SVC (faster on large datasets)
-  cv_folds: 5          # Stratified k-fold cross-validation for supervised models (0 = disabled)
+
+  # Autoencoder hyperparameters
+  ae_epochs: 100
+  ae_patience: 5
+  ae_batch_size: 32
+
+  # SVM backend — 'linear' uses LinearSVC (faster, O(n) training time) or
+  # any sklearn SVC kernel string e.g. 'rbf', 'poly' (O(n²), more expressive)
+  svm_kernel: rbf
 
 # === Detection Settings ===
 detection:
@@ -37,5 +44,7 @@ detection:
 siem:
   mode: file    # Options: file, syslog, both
   log_path: data/logs/alerts.log
+  log_max_bytes: 10485760   # 10 MB per file
+  log_backup_count: 5       # keep 5 rotated files
   syslog_host: 127.0.0.1
   syslog_port: 514

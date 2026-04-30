@@ -69,16 +69,17 @@ def live_packet_monitor(interface: str, packet_callback: callable, count: int, t
 def run_capture(args) -> None:
     """
     Command-line interface handler for network traffic capture.
-    
+
     Parameters:
         args: Parsed command-line arguments containing 'live', 'interface', 'duration', 'packet_count', and 'output' options.
-    
+
     This dispatcher handles the flow of the following capture operations:
         - Network capture and save to PCAP file.
         - Live network monitoring with basic packet data printed to screen.
 
     Uses config defaults and safe file naming if needed.
     """
+    config = get_config()
     interface = args.interface or config['capture']['interface']
     if args.live:
         packet_count = 0

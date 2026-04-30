@@ -35,7 +35,7 @@ class TestDatasetUtils(unittest.TestCase):
     def test_build_combined_dataset(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             df1 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})
-            df2 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})  # duplicate
+            df2 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})  # duplicate — should be dropped
             path1 = os.path.join(tmp_dir, "f1.csv")
             path2 = os.path.join(tmp_dir, "f2.csv")
             df1.to_csv(path1, index=False)
@@ -43,7 +43,7 @@ class TestDatasetUtils(unittest.TestCase):
 
             output = os.path.join(tmp_dir, "combined.csv")
             combined = build_combined_dataset([path1, path2], output)
-            self.assertEqual(len(combined), 2)
+            self.assertEqual(len(combined), 1)  # dedup removes the identical row
             self.assertTrue(os.path.exists(output))
 
     def test_split_dataset_outputs_three_parts(self):

@@ -10,7 +10,6 @@ from models.model_loader import instantiate_model
 from siem.wazuh_forwarder import forward_alert
 from utils.packet_utils import print_packet_summary, drop_columns
 from utils.file_saver import safe_save_path, save_dataframe
-from utils.progress import tqdm_bar
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
@@ -54,15 +53,13 @@ def detection(model, df, model_type, model_name, model_path, output_path=None, l
     df['prediction'] = predictions
 
     if not live:
-        # Simulate per-row progress when running detection on a file
-        for _, row in tqdm_bar(df.iterrows(), total=len(df), desc="Running Detection", unit="row"):
-            if row['prediction'] == 1:
-                logger.debug("Anomaly detected at timestamp %s", row.get("timestamp"))
-
         save_dataframe(df, output_path)
         logger.info("Predictions saved to: %s", output_path)
 
-    for _, row in df[df['prediction'] == 1].iterrows():
+    anomalies = df[df['prediction'] == 1]
+    logger.info("%d anomal%s detected.", len(anomalies), "y" if len(anomalies) == 1 else "ies")
+
+    for _, row in anomalies.iterrows():
         src_port = row.get("tcp_sport") or row.get("udp_sport")
         dst_port = row.get("tcp_dport") or row.get("udp_dport")
         alert = {
@@ -77,7 +74,7 @@ def detection(model, df, model_type, model_name, model_path, output_path=None, l
         }
         forward_alert(alert)
 
-    logger.info("%d alert(s) forwarded to Wazuh.", len(df[df['prediction'] == 1]))
+    logger.info("%d alert(s) forwarded to Wazuh.", len(anomalies))
 
     return df    
 
@@ -117,11 +114,12 @@ def run_detection(args):
         options.
 
     This dispatcher handles the flow of the following detection operations:
-        - Detection of real-time network traffix using a pre-trained model.
+        - Detection of real-time network traffic using a pre-trained model.
         - Detection of network traffic from an input file ('.pcap' or '.csv') using a pre-trained model.
 
     Uses config defaults and safe file naming if needed.
     """
+    config = get_config()
     model_type = args.model or config['detection']['model_type']
     model_path = args.model_path or config['detection']['model_path']
     model_name = os.path.basename(model_path)

@@ -1,13 +1,14 @@
 # models/random_forest.py
 
 import os
+import numpy as np
 import joblib
 import json
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
 from models.base_model import BaseModel
-from utils.metrics_utils import plot_classification_report
+from utils.metrics_utils import plot_classification_report, plot_feature_importance
 from utils.file_saver import save_pickle, save_json, ensure_dir
 from utils.progress import tqdm_bar
 from utils.config_loader import get_config
@@ -98,11 +99,13 @@ class RandomForestModel(BaseModel):
             raise ValueError("Model not trained or loaded.")
 
         y_pred = self.model.predict(X)
+        y_proba = self.model.predict_proba(X)[:, 1]
         metrics = {
             "accuracy": accuracy_score(y_true, y_pred),
             "precision": precision_score(y_true, y_pred, zero_division=0),
             "recall": recall_score(y_true, y_pred, zero_division=0),
             "f1_score": f1_score(y_true, y_pred, zero_division=0),
+            "roc_auc": float(roc_auc_score(y_true, y_proba)) if len(np.unique(y_true)) > 1 else None,
         }
 
         logger.info("Random Forest model evaluation complete.")
@@ -112,21 +115,27 @@ class RandomForestModel(BaseModel):
 
         return metrics
     
-    def plot(self, X_val, y_val, output_path=None, title=None):
+    def plot(self, X_val, y_val, output_path=None, title=None, feature_names=None):
         """
-        Generates and saves a classification report plot.
+        Generates and saves a classification report plot and feature importance chart.
 
         Parameters:
             X_val (np.ndarray): Validation feature set.
             y_val (np.ndarray): Validation labels.
-            output_path (str, optional): File path to save plot.
-            title (str, optional): Title for the plot.
+            output_path (str, optional): File path to save the classification report plot.
+            title (str, optional): Title for the classification report plot.
+            feature_names (list, optional): Feature names for the importance chart.
         """
         y_pred = self.model.predict(X_val)
         metrics = self.evaluate(X_val, y_val, log_metrics=True)
         title = title or f"{self.metadata.get('model_type', 'Model')} Evaluation"
 
         plot_classification_report(metrics, y_val, y_pred, title=title, output_path=output_path)
+
+        importances = self.model.feature_importances_
+        names = feature_names or [f"feature_{i}" for i in range(len(importances))]
+        importance_path = output_path.replace(".png", "_feature_importance.png") if output_path else None
+        plot_feature_importance(importances, names, title=f"{title} — Feature Importance", output_path=importance_path)
 
     def save(self, path,  metrics=None):
         """

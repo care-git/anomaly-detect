@@ -222,7 +222,7 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
 def run_preprocessor(args) -> None:
     """
     Command-line interface handler for data preprocessing.
-    
+
     Parameters:
         args: Parsed command-line arguments containing 'label', 'input', and 'output' options.
 
@@ -231,9 +231,10 @@ def run_preprocessor(args) -> None:
 
     Uses config defaults and safe file naming when needed.
     """
+    config = get_config()
     batch_size = config['preprocessing']['batch_size']
 
-    label = args.label or config['preprocessing']['label']
+    label = args.label if args.label is not None else config['preprocessing']['label']
     pcap_input_path = args.input or config['preprocessing']['pcap_input']
     csv_output_path = args.output or config['preprocessing']['csv_output']
 

@@ -21,11 +21,10 @@ class BaseModel(ABC):
         Initialises the base model with optional configuration and logger.
 
         Parameters:
-            config (Optional[dict]): Optional dictionary of configuration parameters (e.g., thresholds or paths).      
+            config (Optional[dict]): Optional dictionary of configuration parameters (e.g., thresholds or paths).
         """
         self.config = config or {}
         self.logger = logging.getLogger(self.__class__.__name__)
-        logging.basicConfig(level=logging.INFO)
 
     @abstractmethod
     def train(self, X: Union[np.ndarray, pd.DataFrame], y: Any = None, X_val: Optional[Union[np.ndarray, pd.DataFrame]] = None) -> None:

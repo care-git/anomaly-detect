@@ -22,11 +22,13 @@ warnings.filterwarnings("ignore", message=".*does not have valid feature names.*
 import argparse
 
 from __version__ import __version__
+from utils.config_loader import set_config_path
 from core.capture import run_capture
 from core.preprocessor import run_preprocessor
 from core.dataset_utils import run_dataset_utils
 from models.trainer import run_train_model
 from models.detector import run_detection
+from models.benchmark import run_benchmark
 
 
 def parse_args():
@@ -78,6 +80,8 @@ def parse_args():
     train_parser.add_argument("--model", help="Model type (autoencoder, random_forest, svm)")
     train_parser.add_argument("--input", help="Input CSV filepath for training")
     train_parser.add_argument("--output", help="Output directory to save model")
+    train_parser.add_argument("--cv", action="store_true", help="Run k-fold cross-validation instead of a single train/evaluate pass")
+    train_parser.add_argument("--cv-folds", type=int, default=5, help="Number of folds for cross-validation (default: 5)")
 
     # Detect
     detect_parser = subparsers.add_parser("detect", help="Run detection using a trained model")
@@ -88,15 +92,23 @@ def parse_args():
     detect_parser.add_argument("--input", help="Input PCAP filepath for detection (incompatible with live detection)")
     detect_parser.add_argument("--output", help="Output path to save prediction CSV file (incompatible with live detection)")
 
+    # Benchmark
+    benchmark_parser = subparsers.add_parser("benchmark", help="Compare all models on the same labelled dataset")
+    benchmark_parser.add_argument("--input", required=True, help="Input labelled CSV filepath")
+    benchmark_parser.add_argument("--output", help="Directory to save benchmark results")
+
     return parser.parse_args()
 
 def main():
     """
     Main CLI entry point.
-    
+
     Routes parsed command-line arguments to their related module dispatcher.
     """
     args = parse_args()
+
+    # Apply custom config path before any dispatcher loads config values.
+    set_config_path(args.config)
 
     if args.command == "capture":
         run_capture(args)
@@ -112,6 +124,9 @@ def main():
 
     elif args.command == "detect":
         run_detection(args)
+
+    elif args.command == "benchmark":
+        run_benchmark(args)
             
 
 if __name__ == "__main__":
