@@ -23,8 +23,8 @@ data/public_datasets/cicids2017/
 data/public_datasets/nsl-kdd/
 data/public_datasets/unsw-nb15/
 
-# Testing scripts
-scripts/
+# Development helper scripts and files
+notebooks/
 
 # IDE configs
 .vscode/
@@ -40,6 +40,3 @@ build/
 
 # Git attributes file (used for git lfs)
 .gitattributes
-
-# Claude .md
-CLAUDE.md
