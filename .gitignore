@@ -19,9 +19,7 @@ data/processed/
 data.nosync/
 
 # Public datasets uncompiled
-data/public_datasets/cicids2017/
-data/public_datasets/nsl-kdd/
-data/public_datasets/unsw-nb15/
+data/public_datasets/
 
 # Development helper scripts and files
 notebooks/
