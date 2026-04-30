@@ -61,6 +61,8 @@ class RandomForestModel(BaseModel):
         
         logger.info("Training %s trees on data with %d samples", n_estimators, len(X))
 
+        # warm_start=True lets us increment n_estimators by 1 each call so tqdm
+        # can show per-tree progress; each fit() adds only one new tree.
         for i in tqdm_bar(range(1, n_estimators + 1), desc="Training Trees", unit="tree"):
             self.model.n_estimators = i
             self.model.fit(X, y)

@@ -38,11 +38,10 @@ def train_autoencoder(input_path, output_path=None):
 
     logger.info("Loaded training data with shape: %s", df.shape)
 
-    # If labelled data, drop labels
     if "label" in df.columns:
         X = df.drop(columns=["label"]).values
     else:
-        X = df
+        X = df.values
 
     X_train, X_val = train_test_split(X, test_size=0.2, random_state=42)
 

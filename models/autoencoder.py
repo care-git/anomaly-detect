@@ -34,9 +34,10 @@ class AutoencoderModel(BaseModel):
         Initialise the autoencoder model and related components.
 
         Parameters:
-            input_dim (int, optional): Dimensionality of input features. 
+            input_dim (int, optional): Dimensionality of input features.
             threshold (float, optional): Anomaly score threshold.
         """
+        super().__init__()
         self.model = None
         self.threshold = threshold
         self.input_dim = input_dim
@@ -112,6 +113,9 @@ class AutoencoderModel(BaseModel):
         """
         Predicts binary anomaly labels based on reconstruction error.
 
+        Stores per-sample MSE in self.last_mse so callers can retrieve anomaly
+        scores without running inference a second time.
+
         Parameters:
             X (np.ndarray or pd.DataFrame): Feature data to score.
 
@@ -127,6 +131,7 @@ class AutoencoderModel(BaseModel):
         logger.info("Predicting anomalies on %d samples", X.shape[0])
         reconstructions = self.model.predict(X_scaled, verbose=0)
         mse = np.mean(np.square(X_scaled - reconstructions), axis=1)
+        self.last_mse = mse
         return (mse > self.threshold).astype(int)
 
 
@@ -148,7 +153,6 @@ class AutoencoderModel(BaseModel):
 
         recon = self.model.predict(X_scaled, verbose=0)
         mse = np.mean(np.square(X_scaled - recon), axis=1)
-        y_pred = (mse > self.threshold).astype(int)
 
         logger.info("[Eval MSE] mean: %.6f | std: %.6f", mse.mean(), mse.std())
 

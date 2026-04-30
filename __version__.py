@@ -1,1 +1,6 @@
-__version__ = "1.1.0"
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("anomaly-detect")
+except PackageNotFoundError:
+    __version__ = "unknown"

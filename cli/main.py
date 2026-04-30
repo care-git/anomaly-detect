@@ -63,7 +63,7 @@ def parse_args():
     # Preprocess
     preprocess_parser = subparsers.add_parser("preprocess", help="Convert PCAP to CSV features")
     preprocess_parser.add_argument("--input", help="Input PCAP filepath for preprocessing")
-    preprocess_parser.add_argument("--label", help="Optional label to assign to all extracted packets")
+    preprocess_parser.add_argument("--label", type=int, help="Optional integer label to assign to all extracted packets (0 = normal, 1 = anomaly)")
     preprocess_parser.add_argument("--output", help="Output path to save CSV file")
 
     # Dataset Utils

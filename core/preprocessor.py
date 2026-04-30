@@ -168,6 +168,8 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
     Returns:
         pd.DataFrame: Final processed DataFrame containing all packet features.
     """
+    file_obj = None
+    packet_reader = None
     try:
         logger.info("Starting batch preprocessing for: %s", pcap_path)
 
@@ -190,29 +192,31 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
                 df_clean = clean_dataframe(df_batch)
                 df_list.append(df_clean)
                 batch_rows = []
-            
-        # Handle remaining packets
+
         if batch_rows:
             df_batch = pd.DataFrame(batch_rows)
             if label is not None:
                 df_batch["label"] = label
             df_clean = clean_dataframe(df_batch)
             df_list.append(df_clean)
-            
-        packet_reader.close()
-        file_obj.close()    # Ensure file is closed
 
-        df_final = pd.concat(df_list, ignore_index=True)  
+        if not df_list:
+            logger.error("No usable packets extracted — final DataFrame is empty.")
+            return pd.DataFrame()
+
+        df_final = pd.concat(df_list, ignore_index=True)
         logger.info("Finished preprocessing. Total valid rows: %s", len(df_final))
-
-        if df_final.empty:
-            logger.error("Final preprocessed DataFrame is empty — no usable packets extracted.")
 
         return df_final
 
     except Exception as e:
         logger.exception("Failed to preprocess PCAP in batch mode: %s", e)
         return pd.DataFrame()
+    finally:
+        if packet_reader is not None:
+            packet_reader.close()
+        if file_obj is not None:
+            file_obj.close()
 
 
 def run_preprocessor(args) -> None:

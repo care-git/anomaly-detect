@@ -41,15 +41,15 @@ class TestAutoencoderModel(unittest.TestCase):
     def test_model_save_and_reload_works(self):
         model = AutoencoderModel(input_dim=3)
         model.train(self.X, X_val=self.X)
-        model.save(self.model_path, metrics={"mse_mean": 0.1})
+        model.save(self.output_path, metrics={"mse_mean": 0.1})
 
         new_model = AutoencoderModel()
-        new_model.load(self.model_path)
+        new_model.load(self.output_path)
 
         self.assertIsNotNone(new_model.model)
         self.assertIsNotNone(new_model.scaler)
         self.assertGreater(new_model.threshold, 0)
-        metadata = new_model.get_metadata(self.model_path)
+        metadata = new_model.get_metadata(self.output_path)
         self.assertIn("model_type", metadata)
 
 

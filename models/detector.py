@@ -46,18 +46,10 @@ def detection(model, df, model_type, model_name, model_path, output_path=None, l
         
     X = df.values
 
-    metadata = model.get_metadata(model_path)
-
     predictions = model.predict(X)
 
-    # Autoencoder-specific postprocessing
     if model_type == "autoencoder":
-        reconstructions = model.model.predict(model.scaler.transform(X), verbose=0)
-        mse = np.mean(np.square(model.scaler.transform(X) - reconstructions), axis=1)
-        df['anomaly_score'] = mse
-
-        threshold = metadata.get("threshold", config['detection']['threshold'])
-        predictions = (mse > threshold).astype(int)
+        df['anomaly_score'] = model.last_mse
 
     df['prediction'] = predictions
 
@@ -71,13 +63,13 @@ def detection(model, df, model_type, model_name, model_path, output_path=None, l
         logger.info("Predictions saved to: %s", output_path)
 
     for _, row in df[df['prediction'] == 1].iterrows():
+        src_port = row.get("tcp_sport") or row.get("udp_sport")
+        dst_port = row.get("tcp_dport") or row.get("udp_dport")
         alert = {
-            "source_ip": row.get("source_ip", "unknown"),
-            "destination_ip": row.get("destination_ip", "unknown"),
-            "source_port": row.get("source_port", "unknown"),
-            "destination_port": row.get("destination_port", "unknown"),
-            "protocol": row.get("protocol", "unknown"),
-            "anomaly_score": row.get("anomaly_score", None),
+            "source_port": int(src_port) if src_port is not None else None,
+            "destination_port": int(dst_port) if dst_port is not None else None,
+            "protocol": int(row["ip_proto_number"]) if row.get("ip_proto_number") is not None else None,
+            "anomaly_score": row.get("anomaly_score"),
             "classification": "anomaly",
             "model": model_name,
             "model_type": model_type,

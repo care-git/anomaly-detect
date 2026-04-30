@@ -59,9 +59,9 @@ def build_combined_dataset(sources: list[str], output_path: str) -> pd.DataFrame
         combined = pd.concat(dataframes, ignore_index=True)
         logger.info("Combined dataset shape before cleaning: %s", combined.shape)
         
-        # Remove duplicates and unnecessary columns
-        combined.drop_duplicates(inplace=True)
+        # Remove source column first so cross-file identical rows are caught by dedup
         combined.drop(columns=['source'], inplace=True, errors='ignore')
+        combined.drop_duplicates(inplace=True)
 
         # Ensure all values are numeric
         try:
@@ -81,7 +81,7 @@ def build_combined_dataset(sources: list[str], output_path: str) -> pd.DataFrame
         return pd.DataFrame()
 
 
-def split_dataset(df: pd.DataFrame, label_col: str = 'label', train_size: float = 0.8, test_size: float = 0.2, stratify: bool = True, random_state: int = 42)-> tuple[pd.DataFrame, pd.DataFrame]:
+def split_dataset(df: pd.DataFrame, label_col: str = 'label', train_size: float = 0.8, stratify: bool = True, random_state: int = 42)-> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Splits dataset into test and train sets.
 
@@ -89,7 +89,6 @@ def split_dataset(df: pd.DataFrame, label_col: str = 'label', train_size: float 
         df (pd.DataFrame): the dataset to split.
         label_col (str): Column to use for stratification.
         train_size (float): Proportion of data to use for training.
-        test_size (float): Proportion of data to use for testing.
         stratify (bool): Whether to stratify the split based on label column.
         random_state (int): Seed for reproducibility.
 
@@ -98,9 +97,6 @@ def split_dataset(df: pd.DataFrame, label_col: str = 'label', train_size: float 
     """
     if label_col not in df.columns:
         raise ValueError(f"Label column '{label_col}' not found.")
-
-    if not (0.99 < (train_size + test_size) < 1.01):
-        raise ValueError("Split ratios must sum to 1.")
 
     stratify_labels = df[label_col] if stratify else None
 
@@ -133,13 +129,10 @@ def balance_labels(df: pd.DataFrame, label_col: str = 'label', random_state: int
 
     logger.info("Class distribution before balancing:\n%s", class_counts)
 
-    class_0, class_1 = class_counts.index
-    df_minority = df[df[label_col] == class_0]
-    df_majority = df[df[label_col] == class_1]
-
-    # Ensure df_minority is actually the smaller class
-    if len(df_majority) < len(df_minority):
-        df_minority, df_majority = df_majority, df_minority
+    minority_class = class_counts.idxmin()
+    majority_class = class_counts.idxmax()
+    df_minority = df[df[label_col] == minority_class]
+    df_majority = df[df[label_col] == majority_class]
 
     df_majority_downsampled = resample(
         df_majority,

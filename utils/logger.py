@@ -15,13 +15,13 @@ def get_logger(name: str = __name__, level: str = "INFO") -> logging.Logger:
         logging.Logger: Configured logger instance.
     """
     logger = logging.getLogger(name)
+    logger.setLevel(getattr(logging, level.upper(), logging.INFO))
 
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter("[%(asctime)s] %(levelname)s - %(name)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-        logger.setLevel(getattr(logging, level.upper(), logging.INFO))
         logger.propagate = False
-        
+
     return logger

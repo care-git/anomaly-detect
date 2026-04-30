@@ -124,7 +124,7 @@ def generate_incremented_path(base_path, extension=None):
     existing = glob.glob(pattern)
     next_id = len(existing) + 1
 
-    ensure_dir(os.path.join(base_dir, 'placeholder.tmp'))
+    os.makedirs(base_dir, exist_ok=True)
     return os.path.join(base_dir, f"{base_name}_{timestamp}_{next_id}{ext}")
 
 

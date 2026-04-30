@@ -68,6 +68,6 @@ def safe_numeric_cast(x):
     if hasattr(x, '__float__'):
         try:
             return float(x)
-        except:
+        except (TypeError, ValueError, OverflowError):
             return x
     return x

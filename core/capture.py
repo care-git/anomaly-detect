@@ -25,32 +25,29 @@ def capture_packets(interface: str, duration: int, packet_count: int, output_pat
     """
 
     logger.info(f"Capturing packets on interface '%s' for %ds or %d packets...", interface, duration, packet_count)
+    captured = []
+    bar = tqdm(total=packet_count, desc="Capturing Packets", unit="pkt", leave=True)
     try:
-        captured = []
-        bar = tqdm(total=packet_count, desc="Capturing Packets", unit="pkt", leave=True)
-        
-        # Callback function to handle each captured packet
         def handle(pkt):
             captured.append(pkt)
             bar.update(1)
 
-        # Start sniffing with provided parameters
         sniff(
-            iface=interface, 
-            timeout=duration, 
+            iface=interface,
+            timeout=duration,
             count=packet_count,
             prn=handle,
-            )
-        
-        bar.close()
-        logger.info("Packet capture complete, saving to: %s", output_path)
+        )
 
+        logger.info("Packet capture complete, saving to: %s", output_path)
         save_pcap(captured, output_path)
         logger.info("Saved %d packets.", len(captured))
 
     except Scapy_Exception as e:
         logger.error("Packet capture failed: %s", e)
         raise
+    finally:
+        bar.close()
 
 
 def live_packet_monitor(interface: str, packet_callback: callable, count: int, timeout: int) -> None:
@@ -60,9 +57,9 @@ def live_packet_monitor(interface: str, packet_callback: callable, count: int, t
 
     Parameters:
         interface (str): Name of the network interface to monitor packets on.
-        count (int): Time in seconds to monitor for.
-        timeout (int): Maximum number of packets to monitor.
-        packet_callback (callable): Function that prints basic packet information to screen. 
+        timeout (int): Time in seconds to monitor for (None = unlimited).
+        count (int): Maximum number of packets to monitor (0 = unlimited).
+        packet_callback (callable): Function that prints basic packet information to screen.
     """
 
     logger.info("Starting live capture on interface: %s", interface)
@@ -83,8 +80,12 @@ def run_capture(args) -> None:
     Uses config defaults and safe file naming if needed.
     """
     interface = args.interface or config['capture']['interface']
-    packet_count = args.packet_count or config['capture']['packet_count'] if not args.live else 0
-    duration = args.duration or config['capture']['duration'] if not args.live else None
+    if args.live:
+        packet_count = 0
+        duration = None
+    else:
+        packet_count = args.packet_count or config['capture']['packet_count']
+        duration = args.duration or config['capture']['duration']
 
     if args.live:
         live_packet_monitor(interface, print_packet_summary, packet_count, duration)

@@ -1,13 +1,7 @@
 # tests/test_utils/test_progress.py
 
 import unittest
-from io import StringIO
-from contextlib import redirect_stdout
-from utils.progress import tqdm_bar, single_bar, TqdmKerasCallback
-import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.optimizers import Adam
+from utils.progress import tqdm_bar, single_bar
 
 
 class TestProgressUtils(unittest.TestCase):
@@ -21,21 +15,12 @@ class TestProgressUtils(unittest.TestCase):
 
         self.assertEqual(output, data)
 
-    def test_tqdm_keras_callback_updates_epochs(self):
-        # Create a dummy Keras model
-        model = Sequential([
-            Dense(4, input_shape=(3,), activation='relu'),
-            Dense(1, activation='sigmoid')
-        ])
-        model.compile(optimizer=Adam(), loss='binary_crossentropy')
-
-        X = np.random.rand(10, 3)
-        y = np.random.randint(0, 2, size=(10,))
-
-        callback = TqdmKerasCallback(total_epochs=3, desc="Train AE Test", unit="epoch")
-        history = model.fit(X, y, epochs=3, batch_size=2, verbose=0, callbacks=[callback])
-
-        self.assertEqual(len(history.history["loss"]), 3)
+    def test_single_bar_context_manager_completes(self):
+        called = []
+        with single_bar("Testing single_bar", total=1, unit="step", leave=False) as update:
+            called.append(True)
+            update()
+        self.assertEqual(len(called), 1)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ import yaml
 from utils.logger import get_logger
 
 logger = get_logger(__name__, "INFO")
-CONFIG_PATH = os.path.join("config", "config.yml")
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "config.yml")
 _config_cache = None
 
 def get_config():
