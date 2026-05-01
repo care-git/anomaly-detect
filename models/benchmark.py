@@ -100,18 +100,19 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
             rows.append({"model": model_type, "error": str(e)})
 
     comparison = pd.DataFrame(rows).set_index("model")
+    display = comparison.fillna("N/A")
 
-    logger.info("\nBenchmark Results:\n%s", comparison.to_string())
+    logger.info("\nBenchmark Results:\n%s", display.to_string())
 
     if output_dir:
         ensure_dir(output_dir)
         csv_path = os.path.join(output_dir, "benchmark_results.csv")
-        comparison.to_csv(csv_path)
+        display.to_csv(csv_path)
         logger.info("Benchmark table saved to: %s", csv_path)
 
         json_path = os.path.join(output_dir, "benchmark_results.json")
         with open(json_path, "w") as f:
-            json.dump(comparison.reset_index().to_dict(orient="records"), f, indent=2)
+            json.dump(display.reset_index().to_dict(orient="records"), f, indent=2)
         logger.info("Benchmark JSON saved to: %s", json_path)
 
     return comparison
