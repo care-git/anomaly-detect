@@ -1,36 +1,92 @@
 # Anomaly Detect
 
-A modular, machine learning-based threat detection pipeline for identifying anomalies in network traffic. 
+A modular, machine learning-based threat detection pipeline for identifying anomalies in network traffic.
 
-Designed for use by security analysts, researchers, and engineers in need of a production-grade framework for real-time or file-based detection of network threats.
+Designed for use by security analysts, researchers, and engineers needing a flexible framework for real-time or file-based detection of network threats.
 
 ---
 
 ## Features
 
-- **Anomaly-based detection** using Autoencoder, Random Forest, and Support Vector Machine models
-- **Live or offline packet capture** using Scapy
-- **Custom preprocessing** with detailed packet-level feature extraction
-- **Modular training pipeline** with support for pluggable models
-- **Visual evaluation tools** (classification metrics bar chart, confusion matrix)
-- **Wazuh SIEM integration** for alert forwarding via file or syslog
+- **Three detection models** — Autoencoder (unsupervised), Random Forest, and SVM (supervised)
+- **Live and offline packet capture** via Scapy with ~30 features extracted per packet
+- **Benchmark mode** — trains all three models on the same split and produces a side-by-side comparison
+- **k-fold cross-validation** for robust evaluation of any model
+- **Visual evaluation** — classification report charts, feature importance, reconstruction loss distribution, CV results
+- **ROC-AUC, F1, precision, recall** metrics across all models; MSE/MAE reconstruction metrics for the Autoencoder
+- **GPU acceleration** — TensorFlow uses Metal (M1) or CUDA automatically; RF and SVM can use RAPIDS cuML on Linux + NVIDIA
+- **Wazuh SIEM integration** — alert forwarding via rotating log file, syslog UDP, or both
+- **Unified CLI** with per-command help, `--config` override, and `--version`
 - Fully customisable via YAML config
-- Unified logging and versioning support
-- Extensive unit test suite and CLI interface
+- Pytest-based unit test suite
 
 ---
 
 ## Installation
 
-### Conda (recommended)
+### 1. Clone the repository
+
+This project uses [Git LFS](https://git-lfs.github.com/) for compiled public datasets. Install LFS before cloning.
+
 ```bash
+git lfs install
+
+git clone https://github.com/care-git/anomaly-detect.git
+cd anomaly-detect
+git lfs pull          # download compiled dataset files
+```
+
+### 2. Create the environment
+
+**Conda (recommended)**
+```bash
+conda env create -f environment.yml
+conda activate anomaly-detect
+pip install -e .      # installs the CLI entry point
+```
+
+**pip only (no conda)**
+```bash
+pip install -e .
+```
+
+### 3. GPU acceleration (optional)
+```
+
+**NVIDIA GPU (RAPIDS cuML)**
+
+Uncomment `- cuml` in `environment.yml`, recreate the environment, then enable GPU in config:
+
+```bash
+# In environment.yml: uncomment `# - cuml` under GPU acceleration
 conda env create -f environment.yml
 conda activate anomaly-detect
 ```
 
-### `pip` (alternative)
+Set `use_gpu: true` in `config/config.yml`. When cuML is present, Random Forest and SVM training will use GPU-accelerated backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
+
+---
+
+## Configuration
+
+All pipeline settings are controlled by `config/config.yml`. Key options:
+
+| Section | Key | Description |
+|---|---|---|
+| `capture` | `interface` | Network interface for live capture |
+| `capture` | `duration` / `packet_count` | Capture stop conditions |
+| `training` | `model_type` | Default model (`autoencoder`, `random_forest`, `svm`) |
+| `training` | `n_estimators` | Number of trees for Random Forest |
+| `training` | `svm_kernel` | SVM kernel (`linear`, `rbf`, `poly`) |
+| `training` | `svm_max_iter` | Max solver iterations for LinearSVC |
+| `training` | `ae_epochs` / `ae_patience` / `ae_batch_size` | Autoencoder training hyperparameters |
+| `training` | `use_gpu` | Enable GPU acceleration (`true`/`false`) |
+| `siem` | `mode` | Alert output mode (`file`, `syslog`, `both`) |
+| `siem` | `log_max_bytes` / `log_backup_count` | Rotating log file limits |
+
+Pass an alternate config at runtime with `--config`:
 ```bash
-pip install .
+anomaly-detect --config config/custom.yml train --model svm
 ```
 
 ---
@@ -39,65 +95,160 @@ pip install .
 
 ```bash
 anomaly-detect --help
+anomaly-detect <subcommand> --help
 ```
 
-### Example Commands
-```bash
-# Capture 30 seconds of live traffic on eth0
-anomaly-detect capture --interface eth0 --duration 30 --output data/captures/sample.pcap
+### Capture
 
-# Extract features from PCAP to CSV
+Capture live network traffic to a PCAP file.
+
+```bash
+anomaly-detect capture --interface eth0 --duration 30 --output data/captures/sample.pcap
+```
+
+### Preprocess
+
+Extract packet features from a PCAP file to a labelled CSV.
+
+```bash
 anomaly-detect preprocess --input data/captures/sample.pcap --output data/processed/sample.csv
 
-# Train a model
-anomaly-detect train --model autoencoder --input data/processed/sample.csv --output data/models/my_autoencoder
+# Attach a ground-truth label column (1 = attack, 0 = normal)
+anomaly-detect preprocess --input data/captures/attack.pcap --output data/processed/attack.csv --label 1
+```
 
-# Detect anomalies using a trained model
-anomaly-detect detect --model autoencoder --model-path data/models/my_autoencoder --input data/processed/sample.csv --output data/detection/predicted.csv
+### Dataset
+
+Combine, split, and balance labelled CSV datasets.
+
+```bash
+anomaly-detect dataset --combine data/processed/normal.csv data/processed/attack.csv --output data/combined/dataset.csv
+anomaly-detect dataset --balance data/combined/dataset.csv
+```
+
+### Train
+
+Train a model on a preprocessed CSV. Saves the model, scaler, metadata, and evaluation plots to the output directory.
+
+```bash
+# Single train/evaluate pass
+anomaly-detect train --model autoencoder --input data/processed/sample.csv
+anomaly-detect train --model random_forest --input data/combined/dataset.csv --output data/models/rf/
+anomaly-detect train --model svm --input data/combined/dataset.csv
+
+# k-fold cross-validation (default 5 folds)
+anomaly-detect train --model random_forest --input data/combined/dataset.csv --cv
+anomaly-detect train --model svm --input data/combined/dataset.csv --cv --cv-folds 10
+```
+
+### Detect
+
+Run detection on a PCAP file or as a live packet monitor.
+
+```bash
+# File-based detection
+anomaly-detect detect --model autoencoder \
+  --model-path data/models/autoencoder/autoencoder_model \
+  --input data/captures/sample.pcap \
+  --output data/detection/results.csv
+
+# Live detection
+anomaly-detect detect --model random_forest \
+  --model-path data/models/random_forest/random_forest_model \
+  --live --interface eth0
+```
+
+### Benchmark
+
+Train all three models on the same labelled dataset and compare evaluation metrics side by side.
+
+```bash
+anomaly-detect benchmark --input data/combined/dataset.csv --output data/models/benchmark/
 ```
 
 ---
 
 ## Project Structure
+
 ```
 anomaly-detect/
-├── cli/                  # CLI entry point
-├── config/               # YAML configuration file
-├── core/                 # Capture, preprocessing, and dataset tools
-├── models/               # ML model logic, base interface, loader, trainer, detector
-├── siem/                 # Wazuh alert forwarding (file/syslog integration)
-├── utils/                # Logging, config loading, file saving, etc.
-├── tests/                # Full pipeline testing coverage using unit test framework
-├── data/                 # Captures, processed feature CSVs, public datasets, models, etc.
+├── cli/                  # CLI entry point and argument parsing
+├── config/               # YAML configuration (config.yml)
+├── core/                 # Packet capture, preprocessing, dataset utilities
+├── models/               # Model classes, trainer, detector, benchmark
+│   ├── autoencoder.py
+│   ├── random_forest.py
+│   ├── svm.py
+│   ├── trainer.py        # train_* functions and cross_validate_model
+│   ├── detector.py
+│   └── benchmark.py
+├── siem/                 # Wazuh alert forwarding
+├── utils/                # Config loader, logger, progress, GPU helpers, metrics
+├── tests/                # Pytest unit test suite
+└── data/                 # Gitignored — captures, processed CSVs, models, logs
 ```
 
 ---
 
-### Testing
-```
-python -m unittest discover tests
+## Testing
+
+```bash
+pytest tests/
+pytest tests/ -v          # verbose
+pytest tests/ -k svm      # run tests matching a keyword
 ```
 
 ---
 
-### SIEM Integration
+## SIEM Integration
 
-Alerts are exported in Wazuh-compatible format for ingestion into your SIEM. Logs can be forwarded to:
-- Local file (default: `data/logs/alerts.log`)
-- Syslog over UDP
-- Both (configurable)
+Anomalies are forwarded as structured JSON alerts in Wazuh-compatible format.
+
+Configure output mode in `config/config.yml`:
+
+```yaml
+siem:
+  mode: file          # Options: file, syslog, both
+  log_path: data/logs/alerts.log
+  log_max_bytes: 10485760    # 10 MB per file
+  log_backup_count: 5        # keep 5 rotated backups
+  syslog_host: 127.0.0.1
+  syslog_port: 514
+```
+
+Point Wazuh's `ossec.conf` at the log file or configure a syslog input to receive alerts over UDP.
+
+---
+
+## Versioning
+
+Version numbers are derived automatically from git tags using `setuptools-scm`. No manual version file editing is needed.
+
+**To release a new version:**
+```bash
+git tag v1.2.5
+git push origin v1.2.5
+```
+
+The version is then accessible at runtime via:
+```bash
+anomaly-detect --version
+```
+
+**When running from source without a tag** (e.g. a fresh clone with no tags fetched), the version falls back to `1.1.0` as defined in `pyproject.toml`. To get the correct version on a new machine:
+```bash
+git fetch --tags
+```
 
 ---
 
 ## License
 
-MIT License - see more details [here](./LICENSE)
+MIT License — see [LICENSE](./LICENSE) for details.
 
 ---
 
 ## Author
 
-Originally developed by William Jecks as a final year thesis project.
+Originally developed by William Jecks as a final year dissertation project.
 BSc Cyber Security, De Montfort University.
-
----
