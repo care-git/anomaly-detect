@@ -14,6 +14,12 @@ from utils.progress import tqdm_bar
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
+try:
+    from cuml.ensemble import RandomForestClassifier as _cuRF
+    _CUML_AVAILABLE = True
+except ImportError:
+    _CUML_AVAILABLE = False
+
 config = get_config()
 logger = get_logger(__name__, config.get("general", {}).get("logging_level", "INFO"))
 
@@ -36,6 +42,7 @@ class RandomForestModel(BaseModel):
         self.model = RandomForestClassifier(**rf_kwargs)
         self.input_dim = None
         self.metadata = {}
+        self._using_cuml = False
         logger.info("Initialised Random Forest model with params: %s", rf_kwargs)
 
     def train(self, X, y=None, **kwargs):
@@ -49,24 +56,32 @@ class RandomForestModel(BaseModel):
         """
         if y is None:
             raise ValueError("Supervised training requires labels (y).")
-        
+
         self.input_dim = X.shape[1]
+        training_cfg = get_config().get("training", {})
+        n_estimators = training_cfg.get("n_estimators", 100)
+        use_gpu = training_cfg.get("use_gpu", False)
 
-        n_estimators = config['training']['n_estimators']
-
-        self.model = RandomForestClassifier(
-            n_estimators=n_estimators, 
-            warm_start=True,
-            **{k: v for k, v in kwargs.items() if k in RandomForestClassifier().get_params()}
+        if use_gpu and _CUML_AVAILABLE:
+            logger.info("Training Random Forest [cuML GPU] with %d estimators on %d samples", n_estimators, len(X))
+            self.model = _cuRF(n_estimators=n_estimators)
+            self.model.fit(np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.float32))
+            self._using_cuml = True
+        else:
+            if use_gpu and not _CUML_AVAILABLE:
+                logger.warning("use_gpu=True but cuML not found — falling back to sklearn RandomForest.")
+            logger.info("Training %d trees [sklearn CPU] on %d samples", n_estimators, len(X))
+            self.model = RandomForestClassifier(
+                n_estimators=n_estimators,
+                warm_start=True,
+                **{k: v for k, v in kwargs.items() if k in RandomForestClassifier().get_params()}
             )
-        
-        logger.info("Training %s trees on data with %d samples", n_estimators, len(X))
-
-        # warm_start=True lets us increment n_estimators by 1 each call so tqdm
-        # can show per-tree progress; each fit() adds only one new tree.
-        for i in tqdm_bar(range(1, n_estimators + 1), desc="Training Trees", unit="tree"):
-            self.model.n_estimators = i
-            self.model.fit(X, y)
+            # warm_start=True lets us increment n_estimators by 1 each call so tqdm
+            # can show per-tree progress; each fit() adds only one new tree.
+            for i in tqdm_bar(range(1, n_estimators + 1), desc="Training Trees", unit="tree"):
+                self.model.n_estimators = i
+                self.model.fit(X, y)
+            self._using_cuml = False
 
         logger.info("Training complete.")
 
@@ -81,7 +96,8 @@ class RandomForestModel(BaseModel):
             np.ndarray: Predicted labels.
         """
         logger.info("Predicting using trained Random Forest model on %d samples", len(X))
-        return self.model.predict(X)
+        X_in = np.asarray(X, dtype=np.float32) if self._using_cuml else X
+        return np.asarray(self.model.predict(X_in))
 
     def evaluate(self, X, y_true, log_metrics=False):
         """
@@ -98,8 +114,9 @@ class RandomForestModel(BaseModel):
         if self.model is None:
             raise ValueError("Model not trained or loaded.")
 
-        y_pred = self.model.predict(X)
-        y_proba = self.model.predict_proba(X)[:, 1]
+        X_in = np.asarray(X, dtype=np.float32) if self._using_cuml else X
+        y_pred = np.asarray(self.model.predict(X_in))
+        y_proba = np.asarray(self.model.predict_proba(X_in)[:, 1])
         metrics = {
             "accuracy": accuracy_score(y_true, y_pred),
             "precision": precision_score(y_true, y_pred, zero_division=0),
@@ -132,7 +149,7 @@ class RandomForestModel(BaseModel):
 
         plot_classification_report(metrics, y_val, y_pred, title=title, output_path=output_path)
 
-        importances = self.model.feature_importances_
+        importances = np.asarray(self.model.feature_importances_)
         names = feature_names or [f"feature_{i}" for i in range(len(importances))]
         importance_path = output_path.replace(".png", "_feature_importance.png") if output_path else None
         plot_feature_importance(importances, names, title=f"{title} — Feature Importance", output_path=importance_path)
@@ -154,6 +171,7 @@ class RandomForestModel(BaseModel):
             "model_type": "random_forest",
             "model_path": model_path,
             "input_dim": self.input_dim,
+            "using_cuml": self._using_cuml,
             "evaluation_metrics": metrics or {}
         }
 
@@ -178,6 +196,9 @@ class RandomForestModel(BaseModel):
             with open(metadata_path, 'r') as f:
                 self.metadata = json.load(f)
             self.input_dim = self.metadata.get("input_dim")
+            self._using_cuml = self.metadata.get("using_cuml", False)
+            if self._using_cuml and not _CUML_AVAILABLE:
+                logger.warning("Model was trained with cuML but cuML is not installed — predictions may fail.")
 
         logger.info("Random Forest model loaded from: %s", path)
 

@@ -19,3 +19,8 @@ tqdm==4.67.1
 # Visualisation
 matplotlib==3.8.3
 seaborn==0.13.2
+
+# GPU acceleration (optional — Linux + CUDA only)
+# cuml is NOT pip-installable. Install via conda on NVIDIA GPU machines:
+#   conda install -c rapidsai -c conda-forge -c nvidia cuml
+# Then set use_gpu: true in config/config.yml.

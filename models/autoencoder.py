@@ -14,6 +14,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 
 from models.base_model import BaseModel
 from utils.file_saver import save_keras_model, save_pickle, save_json, ensure_dir
+from utils.gpu_utils import log_gpu_info
 from utils.progress import single_bar
 from utils.config_loader import get_config
 from utils.logger import get_logger
@@ -72,9 +73,10 @@ class AutoencoderModel(BaseModel):
         Raises:
             ValueError: If input data contains NaNs or Infs after scaling.
         """
+        log_gpu_info()
         self.input_dim = X.shape[1]
         self.model = self.build_model()
-        
+
         self.scaler.fit(X)
         X_scaled = self.scaler.transform(X)
         X_val_scaled = self.scaler.transform(X_val) if X_val is not None else None

@@ -2,6 +2,7 @@
 
 name: anomaly-detect
 channels:
+  - rapidsai      # required for cuml (GPU acceleration, Linux + CUDA only)
   - conda-forge
   - defaults
 
@@ -26,6 +27,11 @@ dependencies:
   # Utilities
   - pyyaml=6.0.1
   - tqdm=4.67.1
+
+  # GPU acceleration (optional — Linux + CUDA only, not available on macOS)
+  # Remove or comment out on machines without an NVIDIA GPU.
+  # Pairs with use_gpu: true in config/config.yml.
+  # - cuml
 
   # Build tooling
   - pip

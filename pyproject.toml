@@ -37,6 +37,13 @@ dependencies = [
 ]
 license = "MIT"
 
+# cuml (RAPIDS) is NOT available on PyPI and cannot be installed via pip.
+# Install it via conda on Linux + CUDA machines:
+#   conda install -c rapidsai -c conda-forge -c nvidia cuml
+# Then set use_gpu: true in config/config.yml.
+[project.optional-dependencies]
+gpu = []  # placeholder — see comment above
+
 [project.urls]
 Homepage = "https://github.com/twisted-care/anomaly-detect"
 

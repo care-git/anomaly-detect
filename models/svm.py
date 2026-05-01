@@ -9,6 +9,12 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
+try:
+    from cuml.svm import SVC as _cuSVC
+    _CUML_AVAILABLE = True
+except ImportError:
+    _CUML_AVAILABLE = False
+
 from models.base_model import BaseModel
 from utils.metrics_utils import plot_classification_report
 from utils.file_saver import save_pickle, save_json, ensure_dir
@@ -48,9 +54,13 @@ class SVMModel(BaseModel):
         self.input_dim = None
         self.metadata = {}
         self._use_linear = False
+        self._using_cuml = False
 
-    def _build_model(self, use_linear: bool, max_iter: int):
-        """Constructs the appropriate sklearn estimator."""
+    def _build_model(self, use_linear: bool, max_iter: int, kernel: str = "rbf", use_gpu: bool = False):
+        """Constructs the appropriate estimator (cuML or sklearn)."""
+        if use_gpu and _CUML_AVAILABLE:
+            # cuML SVC has native probability support — no CalibratedClassifierCV needed
+            return _cuSVC(probability=True, kernel="linear" if use_linear else kernel)
         if use_linear:
             base = LinearSVC(max_iter=max_iter)
             return CalibratedClassifierCV(base, cv=3)
@@ -77,15 +87,29 @@ class SVMModel(BaseModel):
         training_cfg = config.get("training", {})
         svm_kernel = training_cfg.get("svm_kernel", "rbf")
         max_iter = training_cfg.get("svm_max_iter", 2000)
+        use_gpu = training_cfg.get("use_gpu", False)
 
         self._use_linear = svm_kernel == "linear"
+        self._using_cuml = use_gpu and _CUML_AVAILABLE
         self.input_dim = X.shape[1]
         self.scaler = StandardScaler()
-        self.model = self._build_model(self._use_linear, max_iter)
+        self.model = self._build_model(self._use_linear, max_iter, kernel=svm_kernel, use_gpu=use_gpu)
+
+        if use_gpu and not _CUML_AVAILABLE:
+            logger.warning("use_gpu=True but cuML not found — falling back to sklearn SVM.")
 
         X_scaled = self.scaler.fit_transform(X)
+        if self._using_cuml:
+            X_scaled = X_scaled.astype(np.float32)
+            y = np.asarray(y, dtype=np.float32)
 
-        backend_name = "LinearSVC (CalibratedClassifierCV)" if self._use_linear else f"SVC (kernel={svm_kernel})"
+        if self._using_cuml:
+            backend_name = f"cuML SVC (kernel={svm_kernel})"
+        elif self._use_linear:
+            backend_name = "LinearSVC (CalibratedClassifierCV)"
+        else:
+            backend_name = f"SVC (kernel={svm_kernel})"
+
         logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
         self.model.fit(X_scaled, y)
         logger.info("SVM training complete.")
@@ -101,7 +125,10 @@ class SVMModel(BaseModel):
             np.ndarray: Predicted labels.
         """
         logger.info("Predicting using SVM model on %d samples", len(X))
-        return self.model.predict(self.scaler.transform(X))
+        X_scaled = self.scaler.transform(X)
+        if self._using_cuml:
+            X_scaled = X_scaled.astype(np.float32)
+        return np.asarray(self.model.predict(X_scaled))
 
     def evaluate(self, X, y_true, log_metrics=False):
         """
@@ -119,7 +146,9 @@ class SVMModel(BaseModel):
             raise ValueError("Model not trained or loaded.")
 
         X_scaled = self.scaler.transform(X)
-        y_pred = self.model.predict(X_scaled)
+        if self._using_cuml:
+            X_scaled = X_scaled.astype(np.float32)
+        y_pred = np.asarray(self.model.predict(X_scaled))
 
         metrics = {
             "accuracy": accuracy_score(y_true, y_pred),
@@ -130,9 +159,9 @@ class SVMModel(BaseModel):
 
         # ROC-AUC via probability estimates when available, decision function otherwise.
         if hasattr(self.model, "predict_proba"):
-            y_score = self.model.predict_proba(X_scaled)[:, 1]
+            y_score = np.asarray(self.model.predict_proba(X_scaled)[:, 1])
         elif hasattr(self.model, "decision_function"):
-            y_score = self.model.decision_function(X_scaled)
+            y_score = np.asarray(self.model.decision_function(X_scaled))
         else:
             y_score = y_pred
         metrics["roc_auc"] = float(roc_auc_score(y_true, y_score)) if len(np.unique(y_true)) > 1 else None
@@ -182,6 +211,7 @@ class SVMModel(BaseModel):
             "scaler_path": scaler_path,
             "input_dim": self.input_dim,
             "use_linear": self._use_linear,
+            "using_cuml": self._using_cuml,
             "evaluation_metrics": metrics or {}
         }
 
@@ -207,6 +237,9 @@ class SVMModel(BaseModel):
                 self.metadata = json.load(f)
             self.input_dim = self.metadata.get("input_dim")
             self._use_linear = self.metadata.get("use_linear", False)
+            self._using_cuml = self.metadata.get("using_cuml", False)
+            if self._using_cuml and not _CUML_AVAILABLE:
+                logger.warning("Model was trained with cuML but cuML is not installed — predictions may fail.")
             scaler_path = self.metadata.get("scaler_path")
             if scaler_path and os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
