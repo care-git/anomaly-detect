@@ -6,11 +6,11 @@ import json
 import numpy as np
 from sklearn.svm import SVC, LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
 from models.base_model import BaseModel
 from utils.metrics_utils import plot_classification_report
-from utils.progress import single_bar
 from utils.file_saver import save_pickle, save_json, ensure_dir
 from utils.config_loader import get_config
 from utils.logger import get_logger
@@ -21,6 +21,10 @@ logger = get_logger(__name__, "INFO")
 class SVMModel(BaseModel):
     """
     Support Vector Machine classifier implementation of BaseModel.
+
+    Input features are always standardised via StandardScaler before fitting
+    and inference — this is required for convergence with LinearSVC and
+    significantly improves performance with RBF/poly kernels.
 
     Supports two backends selected via config `training.svm_kernel`:
         - 'linear': uses LinearSVC wrapped in CalibratedClassifierCV for
@@ -40,27 +44,29 @@ class SVMModel(BaseModel):
         """
         self._init_kwargs = {k: v for k, v in kwargs.items() if k in SVC().get_params()}
         self.model = None
+        self.scaler = StandardScaler()
         self.input_dim = None
         self.metadata = {}
         self._use_linear = False
 
-    def _build_model(self, use_linear: bool):
+    def _build_model(self, use_linear: bool, max_iter: int):
         """Constructs the appropriate sklearn estimator."""
         if use_linear:
-            base = LinearSVC(max_iter=2000)
+            base = LinearSVC(max_iter=max_iter)
             return CalibratedClassifierCV(base, cv=3)
         return SVC(probability=True, **self._init_kwargs)
 
     def train(self, X, y=None, **kwargs):
         """
-        Trains the SVM model on the labelled data.
+        Fits a StandardScaler on the training data then trains the SVM.
 
         The backend is chosen from config `training.svm_kernel`. Setting it to
         'linear' instantiates a LinearSVC (via CalibratedClassifierCV for
         probability estimates); any other value uses SVC with that kernel.
+        Max solver iterations are controlled by config `training.svm_max_iter`.
 
         Parameters:
-            X (np.ndarray or pd.DataFrame): Input features.
+            X (np.ndarray or pd.DataFrame): Input features (unscaled).
             y (np.ndarray or pd.Series): Class labels.
             **kwargs: Ignored (included for interface consistency).
         """
@@ -68,47 +74,53 @@ class SVMModel(BaseModel):
             raise ValueError("Supervised training requires labels (y).")
 
         config = get_config()
-        svm_kernel = config.get("training", {}).get("svm_kernel", "rbf")
+        training_cfg = config.get("training", {})
+        svm_kernel = training_cfg.get("svm_kernel", "rbf")
+        max_iter = training_cfg.get("svm_max_iter", 2000)
+
         self._use_linear = svm_kernel == "linear"
         self.input_dim = X.shape[1]
-        self.model = self._build_model(self._use_linear)
+        self.scaler = StandardScaler()
+        self.model = self._build_model(self._use_linear, max_iter)
+
+        X_scaled = self.scaler.fit_transform(X)
 
         backend_name = "LinearSVC (CalibratedClassifierCV)" if self._use_linear else f"SVC (kernel={svm_kernel})"
         logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
-
-        with single_bar("Training SVM", unit="step") as update:
-            self.model.fit(X, y)
-            update()
+        self.model.fit(X_scaled, y)
+        logger.info("SVM training complete.")
 
     def predict(self, X):
         """
-        Generates class predictions from the trained model.
+        Scales input then generates class predictions from the trained model.
 
         Parameters:
-            X (np.ndarray or pd.DataFrame): Input features.
+            X (np.ndarray or pd.DataFrame): Input features (unscaled).
 
         Returns:
             np.ndarray: Predicted labels.
         """
         logger.info("Predicting using SVM model on %d samples", len(X))
-        return self.model.predict(X)
+        return self.model.predict(self.scaler.transform(X))
 
     def evaluate(self, X, y_true, log_metrics=False):
         """
-        Evaluates the classifier on labelled data.
+        Scales input then evaluates the classifier on labelled data.
 
         Parameters:
-            X (np.ndarray or pd.DataFrame): Input features.
+            X (np.ndarray or pd.DataFrame): Input features (unscaled).
             y_true (np.ndarray or pd.Series): Ground truth labels.
-            log_metrics (bool): Whether to log the classification report.
+            log_metrics (bool): Whether to log the full classification report.
 
         Returns:
-            dict: Evaluation metrics including accuracy, precision, recall, F1 score, and ROC-AUC.
+            dict: Evaluation metrics including accuracy, precision, recall, F1, and ROC-AUC.
         """
         if self.model is None:
             raise ValueError("Model not trained or loaded.")
 
-        y_pred = self.model.predict(X)
+        X_scaled = self.scaler.transform(X)
+        y_pred = self.model.predict(X_scaled)
+
         metrics = {
             "accuracy": accuracy_score(y_true, y_pred),
             "precision": precision_score(y_true, y_pred, zero_division=0),
@@ -118,9 +130,9 @@ class SVMModel(BaseModel):
 
         # ROC-AUC via probability estimates when available, decision function otherwise.
         if hasattr(self.model, "predict_proba"):
-            y_score = self.model.predict_proba(X)[:, 1]
+            y_score = self.model.predict_proba(X_scaled)[:, 1]
         elif hasattr(self.model, "decision_function"):
-            y_score = self.model.decision_function(X)
+            y_score = self.model.decision_function(X_scaled)
         else:
             y_score = y_pred
         metrics["roc_auc"] = float(roc_auc_score(y_true, y_score)) if len(np.unique(y_true)) > 1 else None
@@ -137,12 +149,12 @@ class SVMModel(BaseModel):
         Generates and saves a classification report plot.
 
         Parameters:
-            X_val (np.ndarray): Validation feature set.
+            X_val (np.ndarray): Validation feature set (unscaled).
             y_val (np.ndarray): Validation labels.
             output_path (str, optional): File path to save the plot.
             title (str, optional): Title for the plot.
         """
-        y_pred = self.model.predict(X_val)
+        y_pred = self.predict(X_val)
         metrics = self.evaluate(X_val, y_val, log_metrics=True)
         title = title or f"{self.metadata.get('model_type', 'Model')} Evaluation"
 
@@ -150,7 +162,7 @@ class SVMModel(BaseModel):
 
     def save(self, path, metrics=None):
         """
-        Saves the model, metadata, and optionally evaluation metrics.
+        Saves the model, scaler, metadata, and optionally evaluation metrics.
 
         Parameters:
             path (str): Directory to save model files.
@@ -161,9 +173,13 @@ class SVMModel(BaseModel):
         model_path = os.path.join(path, "model.pkl")
         save_pickle(self.model, model_path)
 
+        scaler_path = os.path.join(path, "scaler.pkl")
+        save_pickle(self.scaler, scaler_path)
+
         self.metadata = {
             "model_type": "svm",
             "model_path": model_path,
+            "scaler_path": scaler_path,
             "input_dim": self.input_dim,
             "use_linear": self._use_linear,
             "evaluation_metrics": metrics or {}
@@ -172,11 +188,11 @@ class SVMModel(BaseModel):
         metadata_path = os.path.join(path, 'metadata.json')
         save_json(self.metadata, metadata_path)
 
-        logger.info("SVM model, metadata, and metrics plot saved to: %s", path)
+        logger.info("SVM model and scaler saved to: %s", path)
 
     def load(self, path):
         """
-        Loads the model and metadata from disk.
+        Loads the model, scaler, and metadata from disk.
 
         Parameters:
             path (str): Directory to load model files from.
@@ -191,6 +207,11 @@ class SVMModel(BaseModel):
                 self.metadata = json.load(f)
             self.input_dim = self.metadata.get("input_dim")
             self._use_linear = self.metadata.get("use_linear", False)
+            scaler_path = self.metadata.get("scaler_path")
+            if scaler_path and os.path.exists(scaler_path):
+                self.scaler = joblib.load(scaler_path)
+            else:
+                logger.warning("Scaler not found in metadata — predictions may be inaccurate.")
 
         logger.info("SVM model loaded from: %s", path)
 
@@ -207,6 +228,7 @@ class SVMModel(BaseModel):
         return self.metadata or {
             "model_type": "svm",
             "model_path": os.path.join(path, "model.pkl"),
+            "scaler_path": os.path.join(path, "scaler.pkl"),
             "input_dim": self.input_dim,
             "evaluation_metrics": {}
         }

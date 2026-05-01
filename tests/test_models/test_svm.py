@@ -14,9 +14,9 @@ class TestSVMModel(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.model_path = os.path.join(self.temp_dir.name, "svm_model")
 
-        # 4 samples, 2 features, binary labels
-        self.X = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
-        self.y = np.array([0, 1, 0, 1])
+        # 6 samples (3 per class) so CalibratedClassifierCV(cv=3) has enough folds
+        self.X = np.array([[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]])
+        self.y = np.array([0, 1, 0, 1, 0, 1])
 
     def tearDown(self):
         self.temp_dir.cleanup()

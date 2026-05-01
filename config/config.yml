@@ -31,6 +31,7 @@ training:
   # SVM backend — 'linear' uses LinearSVC (faster, O(n) training time) or
   # any sklearn SVC kernel string e.g. 'rbf', 'poly' (O(n²), more expressive)
   svm_kernel: linear
+  svm_max_iter: 2000
 
 # === Detection Settings ===
 detection:

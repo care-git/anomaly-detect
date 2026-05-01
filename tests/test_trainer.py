@@ -47,10 +47,12 @@ class TestTrainerModule(unittest.TestCase):
         self.assertIn("accuracy", metrics)
 
     def test_train_svm_on_labelled_data(self):
+        # 10 samples (5 per class) so after 80/20 split CalibratedClassifierCV(cv=3)
+        # has at least 3 examples per class in the training fold
         df = pd.DataFrame({
-            "f1": [1.0, 2.0, 3.0, 4.0],
-            "f2": [9.0, 8.0, 7.0, 6.0],
-            "label": [1, 0, 1, 0]
+            "f1": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+            "f2": [10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0],
+            "label": [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
         })
         input_path = os.path.join(self.temp_dir.name, "svm_data.csv")
         df.to_csv(input_path, index=False)
