@@ -1,12 +1,22 @@
 # pyproject.toml
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_file = "_version.py"
+fallback_version = "1.1.0"
+
+[tool.setuptools.packages.find]
+include = ["cli*", "core*", "models*", "siem*", "utils*"]
+
+[tool.setuptools]
+py-modules = ["__version__"]
 
 [project]
 name = "anomaly-detect"
-version = "1.1.0"
+dynamic = ["version"]
 description = "Anomaly-Based Threat Detection Pipeline using Machine Learning"
 authors = [
   { name = "William Jecks", email = "p2721974@my365.dmu.ac.uk" }
@@ -25,7 +35,7 @@ dependencies = [
   "seaborn==0.13.2",
   "tqdm==4.67.1",
 ]
-license = {text = "MIT"}
+license = "MIT"
 
 [project.urls]
 Homepage = "https://github.com/twisted-care/anomaly-detect"

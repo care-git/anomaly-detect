@@ -26,3 +26,8 @@ dependencies:
   # Utilities
   - pyyaml=6.0.1
   - tqdm=4.67.1
+
+  # Build tooling
+  - pip
+  - pip:
+    - setuptools-scm
