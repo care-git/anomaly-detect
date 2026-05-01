@@ -173,15 +173,15 @@ class AutoencoderModel(BaseModel):
             y_pred = (mse > self.threshold).astype(int)
 
             results.update({
+                "avg_mse_normal": float(mse[y_true == 0].mean()) if (y_true == 0).any() else None,
+                "avg_mse_anomalous": float(mse[y_true == 1].mean()) if (y_true == 1).any() else None,
+                "avg_mae_normal": float(mae[y_true == 0].mean()) if (y_true == 0).any() else None,
+                "avg_mae_anomalous": float(mae[y_true == 1].mean()) if (y_true == 1).any() else None,
                 "accuracy": accuracy_score(y_true, y_pred),
                 "precision": precision_score(y_true, y_pred, zero_division=0),
                 "recall": recall_score(y_true, y_pred, zero_division=0),
                 "f1_score": f1_score(y_true, y_pred, zero_division=0),
                 "roc_auc": float(roc_auc_score(y_true, mse)) if len(np.unique(y_true)) > 1 else None,
-                "avg_mse_normal": float(mse[y_true == 0].mean()) if (y_true == 0).any() else None,
-                "avg_mse_anomalous": float(mse[y_true == 1].mean()) if (y_true == 1).any() else None,
-                "avg_mae_normal": float(mae[y_true == 0].mean()) if (y_true == 0).any() else None,
-                "avg_mae_anomalous": float(mae[y_true == 1].mean()) if (y_true == 1).any() else None,
             })
 
         return results
