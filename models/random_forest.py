@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from models.base_model import BaseModel
 from utils.metrics_utils import plot_classification_report, plot_feature_importance
 from utils.file_saver import save_pickle, save_json, ensure_dir
-from utils.progress import tqdm_bar
+from utils.progress import TrainingSpinner
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
@@ -65,7 +65,8 @@ class RandomForestModel(BaseModel):
         if use_gpu and _CUML_AVAILABLE:
             logger.info("Training Random Forest [cuML GPU] with %d estimators on %d samples", n_estimators, len(X))
             self.model = _cuRF(n_estimators=n_estimators)
-            self.model.fit(np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.float32))
+            with TrainingSpinner("Training Random Forest [GPU]") as spinner:
+                self.model.fit(np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.float32))
             self._using_cuml = True
         else:
             if use_gpu and not _CUML_AVAILABLE:
@@ -76,11 +77,13 @@ class RandomForestModel(BaseModel):
                 warm_start=True,
                 **{k: v for k, v in kwargs.items() if k in RandomForestClassifier().get_params()}
             )
-            # warm_start=True lets us increment n_estimators by 1 each call so tqdm
-            # can show per-tree progress; each fit() adds only one new tree.
-            for i in tqdm_bar(range(1, n_estimators + 1), desc="Training Trees", unit="tree"):
-                self.model.n_estimators = i
-                self.model.fit(X, y)
+            # warm_start=True lets us increment n_estimators by 1 each call so the
+            # spinner can show per-tree progress; each fit() adds only one new tree.
+            with TrainingSpinner("Training Random Forest") as spinner:
+                for i in range(1, n_estimators + 1):
+                    self.model.n_estimators = i
+                    self.model.fit(X, y)
+                    spinner.update({"tree": f"{i}/{n_estimators}"})
             self._using_cuml = False
 
         logger.info("Training complete.")

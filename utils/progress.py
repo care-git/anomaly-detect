@@ -1,6 +1,8 @@
 # utils/progress.py
 
-from contextlib import contextmanager
+import sys
+import threading
+import time
 from tqdm import tqdm
 
 
@@ -21,20 +23,74 @@ def tqdm_bar(iterable, desc="", unit="it", total=None, leave=True, disable=False
     """
     return tqdm(iterable, desc=desc, unit=unit, total=total, leave=leave, disable=disable)
 
-@contextmanager
-def single_bar(desc="", total=1, unit="it", leave=True, disable=False):
-    """
-    Context manager for single-step progress bars.
 
-    Useful for operations I can't reasonably assign an iterable for.
-
-    Parameters:
-        desc (str): Description shown by progress bar.
-        total (int): Total count (default is 1).
-        unit (str): Label for iteration unit.
-        leave (bool): Whether to keep the bar after completion.
-        disable (bool): Disables the progress bar entirely if True.
+class TrainingSpinner:
     """
-    bar = tqdm(total=total, desc=desc, unit=unit, leave=leave, disable=disable)
-    yield lambda: bar.update(1)
-    bar.close()
+    Thread-based spinner for training operations.
+
+    Displays a rotating braille character with live key-value stats and elapsed
+    time on a single overwriting line. Call update() from model training loops
+    to push per-step metrics (e.g. epoch, loss, tree count).
+
+    Usage:
+        with TrainingSpinner("Training SVM") as spinner:
+            model.fit(X, y)                          # no updates — elapsed only
+
+        with TrainingSpinner("Training RF") as spinner:
+            for i in range(n):
+                model.fit(X, y)
+                spinner.update({"tree": f"{i+1}/{n}"})
+    """
+
+    _FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+
+    def __init__(self, desc: str = "Training"):
+        self._desc = desc
+        self._stats: dict = {}
+        self._stop = threading.Event()
+        self._lock = threading.Lock()
+        self._thread: threading.Thread | None = None
+        self._start_time: float = 0.0
+
+    def update(self, stats: dict) -> None:
+        """Push new key-value pairs to display alongside the spinner."""
+        with self._lock:
+            self._stats.update(stats)
+
+    def _spin(self) -> None:
+        frame_idx = 0
+        while not self._stop.is_set():
+            elapsed = time.time() - self._start_time
+            elapsed_str = f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}"
+            with self._lock:
+                stats = dict(self._stats)
+            parts = " | ".join(f"{k}: {v}" for k, v in stats.items())
+            right = f" | {parts}" if parts else ""
+            line = f"\r{self._FRAMES[frame_idx % len(self._FRAMES)]}  {self._desc}{right} | {elapsed_str}"
+            sys.stderr.write(line)
+            sys.stderr.flush()
+            frame_idx += 1
+            time.sleep(0.1)
+
+    def start(self) -> "TrainingSpinner":
+        self._start_time = time.time()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+        self._thread.start()
+        return self
+
+    def stop(self, success: bool = True) -> None:
+        self._stop.set()
+        if self._thread:
+            self._thread.join()
+        elapsed = time.time() - self._start_time
+        elapsed_str = f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}"
+        mark = "✓" if success else "✗"
+        # trailing spaces clear any leftover spinner characters from the line
+        sys.stderr.write(f"\r{mark}  {self._desc} — done in {elapsed_str}          \n")
+        sys.stderr.flush()
+
+    def __enter__(self) -> "TrainingSpinner":
+        return self.start()
+
+    def __exit__(self, exc_type, *_) -> None:
+        self.stop(success=exc_type is None)

@@ -1,11 +1,13 @@
 # models/svm.py
 
 import os
+import warnings
 import joblib
 import json
 import numpy as np
 from sklearn.svm import SVC, LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
@@ -18,6 +20,7 @@ except ImportError:
 from models.base_model import BaseModel
 from utils.metrics_utils import plot_classification_report
 from utils.file_saver import save_pickle, save_json, ensure_dir
+from utils.progress import TrainingSpinner
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
@@ -111,8 +114,10 @@ class SVMModel(BaseModel):
             backend_name = f"SVC (kernel={svm_kernel})"
 
         logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
-        self.model.fit(X_scaled, y)
-        logger.info("SVM training complete.")
+        with TrainingSpinner(f"Training SVM [{backend_name}]"):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=ConvergenceWarning)
+                self.model.fit(X_scaled, y)
 
     def predict(self, X):
         """

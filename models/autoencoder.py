@@ -7,7 +7,7 @@ import json
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import Callback, EarlyStopping
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
@@ -15,12 +15,26 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from models.base_model import BaseModel
 from utils.file_saver import save_keras_model, save_pickle, save_json, ensure_dir
 from utils.gpu_utils import log_gpu_info
-from utils.progress import single_bar
+from utils.progress import TrainingSpinner
 from utils.config_loader import get_config
 from utils.logger import get_logger
 
 config = get_config()
 logger = get_logger(__name__, config.get("general", {}).get("logging_level", "INFO"))
+
+
+class _SpinnerEpochCallback(Callback):
+    """Pushes per-epoch metrics to a TrainingSpinner during model.fit()."""
+
+    def __init__(self, spinner: TrainingSpinner, total_epochs: int):
+        super().__init__()
+        self._spinner = spinner
+        self._total = total_epochs
+
+    def on_epoch_end(self, epoch, logs=None):
+        stats = {"epoch": f"{epoch + 1}/{self._total}"}
+        stats.update({k: f"{v:.4f}" for k, v in (logs or {}).items()})
+        self._spinner.update(stats)
 
 
 class AutoencoderModel(BaseModel):
@@ -90,7 +104,7 @@ class AutoencoderModel(BaseModel):
         patience = cfg.get("ae_patience", 5)
         max_epochs = cfg.get("ae_epochs", 100)
         batch_size = cfg.get("ae_batch_size", 32)
-        with single_bar("Training Autoencoder", unit="stage") as update:
+        with TrainingSpinner("Training Autoencoder") as spinner:
             self.model.fit(
                 X_scaled, X_scaled,
                 epochs=max_epochs,
@@ -98,10 +112,10 @@ class AutoencoderModel(BaseModel):
                 validation_data=(X_val_scaled, X_val_scaled) if X_val_scaled is not None else None,
                 callbacks=[
                     EarlyStopping(monitor='loss', patience=patience, restore_best_weights=True),
-                    ],
+                    _SpinnerEpochCallback(spinner, total_epochs=max_epochs),
+                ],
                 verbose=0
             )
-            update()
 
         # Set anomaly threshold based on reconstruction error distribution
         recon = self.model.predict(X_scaled, verbose=0)

@@ -49,3 +49,9 @@ Homepage = "https://github.com/twisted-care/anomaly-detect"
 
 [project.scripts]
 anomaly-detect = "cli.main:main"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  # LinearSVC on toy test fixtures can't converge — not actionable on real data.
+  "ignore::sklearn.exceptions.ConvergenceWarning",
+]

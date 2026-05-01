@@ -1,7 +1,7 @@
 # tests/test_utils/test_progress.py
 
 import unittest
-from utils.progress import tqdm_bar, single_bar
+from utils.progress import tqdm_bar
 
 
 class TestProgressUtils(unittest.TestCase):
@@ -14,13 +14,6 @@ class TestProgressUtils(unittest.TestCase):
             output.append(i)
 
         self.assertEqual(output, data)
-
-    def test_single_bar_context_manager_completes(self):
-        called = []
-        with single_bar("Testing single_bar", total=1, unit="step", leave=False) as update:
-            called.append(True)
-            update()
-        self.assertEqual(len(called), 1)
 
 
 if __name__ == "__main__":
