@@ -7,13 +7,6 @@ import warnings
 from cryptography.utils import CryptographyDeprecationWarning
 warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
 
-# Suppress Pandas deprecation warning about silent downcasting (fillna)
-warnings.simplefilter(action="ignore", category=FutureWarning)
-
-# Suppress Tensorflow/Keras suggestion to swap to .legacy.Adam optimiser on M1/M2 chips
-import absl.logging
-absl.logging.set_verbosity(absl.logging.ERROR)
-
 # Suppress StandardScaler feature warning for autoencoders on live data
 warnings.filterwarnings("ignore", message=".*does not have valid feature names.*")
 

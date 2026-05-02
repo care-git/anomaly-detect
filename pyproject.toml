@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
 version_file = "_version.py"
-fallback_version = "1.1.0"
+fallback_version = "1.3.0"
 
 [tool.setuptools.packages.find]
 include = ["cli*", "core*", "models*", "siem*", "utils*"]
@@ -19,21 +19,21 @@ name = "anomaly-detect"
 dynamic = ["version"]
 description = "Anomaly-Based Threat Detection Pipeline using Machine Learning"
 authors = [
-  { name = "William Jecks", email = "p2721974@my365.dmu.ac.uk" }
+  { name = "William Jecks", email = "billy@jecks.co.uk" }
 ]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "numpy==1.26.4",
-  "pandas==2.2.3",
-  "scikit-learn==1.3.2",
-  "tensorflow==2.15.0",
-  "joblib==1.4.0",
-  "pyyaml==6.0.1",
-  "scapy==2.5.0",
-  "matplotlib==3.8.3",
+  "numpy==2.4.4",
+  "pandas==3.0.2",
+  "scikit-learn==1.8.0",
+  "tensorflow==2.21.0",
+  "joblib==1.5.3",
+  "pyyaml==6.0.3",
+  "scapy==2.7.0",
+  "matplotlib==3.10.9",
   "seaborn==0.13.2",
-  "tqdm==4.67.1",
+  "tqdm==4.67.3",
 ]
 license = "MIT"
 
@@ -45,7 +45,7 @@ license = "MIT"
 gpu = []  # placeholder — see comment above
 
 [project.urls]
-Homepage = "https://github.com/twisted-care/anomaly-detect"
+Homepage = "https://github.com/care-git/anomaly-detect"
 
 [project.scripts]
 anomaly-detect = "cli.main:main"

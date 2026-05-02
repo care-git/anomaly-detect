@@ -4,10 +4,10 @@ import os
 import numpy as np
 import joblib
 import json
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import Callback, EarlyStopping
+from keras.models import Model, load_model
+from keras.layers import Input, Dense
+from keras.optimizers import Adam
+from keras.callbacks import Callback, EarlyStopping
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score

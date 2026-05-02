@@ -3,8 +3,8 @@
 import unittest
 import tempfile
 import os
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense
+from keras import Sequential
+from keras.layers import Dense
 from utils.file_saver import (
     safe_save_path,
     save_pickle,
