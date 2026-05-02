@@ -1,0 +1,46 @@
+# environment-linux.yml
+# Linux — x86_64 (tested on Arch Linux, Ryzen 5 5600x + RTX 3060)
+#
+# Usage:
+#   conda env create -f environment-linux.yml
+#   conda activate anomaly-detect
+#   pip install -e .
+#
+# GPU note: to enable cuML GPU acceleration for RF and SVM training, uncomment
+# the cuml line below, then set use_gpu: true in config/config.yml.
+
+name: anomaly-detect
+channels:
+  - rapidsai      # required for cuml (GPU acceleration, Linux + CUDA only)
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+
+  # Core ML stack
+  - numpy=2.4.4
+  - pandas=3.0.2
+  - scikit-learn=1.8.0
+  - tensorflow=2.21.0
+  - joblib=1.5.3
+
+  # Packet analysis
+  - scapy=2.7.0
+
+  # Visualisation
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+
+  # Utilities
+  - pyyaml=6.0.3
+  - tqdm=4.67.3
+
+  # GPU acceleration (optional — requires NVIDIA GPU + CUDA drivers)
+  # Uncomment and set use_gpu: true in config/config.yml to enable.
+  # - cuml
+
+  # Build tooling
+  - pip
+  - pip:
+    - setuptools-scm

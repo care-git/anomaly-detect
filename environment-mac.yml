@@ -1,0 +1,48 @@
+# environment-mac.yml
+# macOS — Apple Silicon (M1/M2/M3)
+#
+# TensorFlow is installed via pip below. Apple distributes tensorflow-macos
+# and tensorflow-metal as pip wheels only — there is no conda package.
+# Python 3.12 is used because tensorflow-macos does not yet have stable
+# Python 3.13 support on macOS.
+#
+# Usage:
+#   conda env create -f environment-mac.yml
+#   conda activate anomaly-detect
+#   pip install -e .
+#
+# GPU note: tensorflow-metal enables Metal GPU acceleration for the Autoencoder
+# automatically — no config change needed. The use_gpu flag in config.yml
+# controls cuML (RF/SVM), which is not available on macOS; leave it false.
+
+name: anomaly-detect
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+
+  # Core ML stack
+  - numpy=2.4.4
+  - pandas=3.0.2
+  - scikit-learn=1.8.0
+  - joblib=1.5.3
+
+  # Packet analysis
+  - scapy=2.7.0
+
+  # Visualisation
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+
+  # Utilities
+  - pyyaml=6.0.3
+  - tqdm=4.67.3
+
+  # Build tooling
+  - pip
+  - pip:
+    - tensorflow-macos    # TF for Apple Silicon — pin version if needed e.g. ==2.16.0
+    - tensorflow-metal    # Metal GPU backend (Autoencoder trains on GPU automatically)
+    - setuptools-scm

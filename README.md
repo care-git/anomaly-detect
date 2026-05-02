@@ -38,11 +38,20 @@ git lfs pull          # download compiled dataset files
 
 ### 2. Create the environment
 
-**Conda (recommended)**
+Use the file that matches your platform:
+
+**macOS — Apple Silicon (M1/M2/M3)**
 ```bash
-conda env create -f environment.yml
+conda env create -f environment-mac.yml
 conda activate anomaly-detect
-pip install -e .      # installs the CLI entry point
+pip install -e .
+```
+
+**Linux — x86_64**
+```bash
+conda env create -f environment-linux.yml
+conda activate anomaly-detect
+pip install -e .
 ```
 
 **pip only (no conda)**
@@ -51,19 +60,18 @@ pip install -e .
 ```
 
 ### 3. GPU acceleration (optional)
-```
 
-**NVIDIA GPU (RAPIDS cuML)**
+**Apple Silicon** — `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
 
-Uncomment `- cuml` in `environment.yml`, recreate the environment, then enable GPU in config:
+**Linux + NVIDIA GPU (RAPIDS cuML)** — uncomment `# - cuml` in `environment-linux.yml`, recreate the environment, then enable GPU in config:
 
 ```bash
-# In environment.yml: uncomment `# - cuml` under GPU acceleration
-conda env create -f environment.yml
+# In environment-linux.yml: uncomment `# - cuml` under GPU acceleration
+conda env create -f environment-linux.yml
 conda activate anomaly-detect
 ```
 
-Set `use_gpu: true` in `config/config.yml`. When cuML is present, Random Forest and SVM training will use GPU-accelerated backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
+Set `use_gpu: true` in `config/config.yml`. When cuML is present, Random Forest and SVM training use GPU-accelerated backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
 
 ---
 
@@ -172,20 +180,22 @@ anomaly-detect benchmark --input data/combined/dataset.csv --output data/models/
 
 ```
 anomaly-detect/
-├── cli/                  # CLI entry point and argument parsing
-├── config/               # YAML configuration (config.yml)
-├── core/                 # Packet capture, preprocessing, dataset utilities
-├── models/               # Model classes, trainer, detector, benchmark
+├── cli/                      # CLI entry point and argument parsing
+├── config/                   # YAML configuration (config.yml)
+├── core/                     # Packet capture, preprocessing, dataset utilities
+├── models/                   # Model classes, trainer, detector, benchmark
 │   ├── autoencoder.py
 │   ├── random_forest.py
 │   ├── svm.py
-│   ├── trainer.py        # train_* functions and cross_validate_model
+│   ├── trainer.py            # train_* functions and cross_validate_model
 │   ├── detector.py
 │   └── benchmark.py
-├── siem/                 # Wazuh alert forwarding
-├── utils/                # Config loader, logger, progress, GPU helpers, metrics
-├── tests/                # Pytest unit test suite
-└── data/                 # Gitignored — captures, processed CSVs, models, logs
+├── siem/                     # Wazuh alert forwarding
+├── utils/                    # Config loader, logger, progress, GPU helpers, metrics
+├── tests/                    # Pytest unit test suite
+├── environment-mac.yml       # Conda environment — macOS Apple Silicon
+├── environment-linux.yml     # Conda environment — Linux x86_64
+└── data/                     # Gitignored — captures, processed CSVs, models, logs
 ```
 
 ---
