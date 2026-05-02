@@ -85,8 +85,8 @@ class TrainingSpinner:
         elapsed = time.time() - self._start_time
         elapsed_str = f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}"
         mark = "✓" if success else "✗"
-        # trailing spaces clear any leftover spinner characters from the line
-        sys.stderr.write(f"\r{mark}  {self._desc} — done in {elapsed_str}          \n")
+        # \033[K clears from the cursor to end of line, handling any length of previous content
+        sys.stderr.write(f"\r{mark}  {self._desc} — done in {elapsed_str}\033[K\n")
         sys.stderr.flush()
 
     def __enter__(self) -> "TrainingSpinner":

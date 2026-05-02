@@ -24,10 +24,12 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  "numpy==2.4.4",
+  # numpy and tensorflow are intentionally excluded — the platform-specific
+  # environment files handle installation with the correct versions for each
+  # platform. Pinning them here causes pip install -e . to override the
+  # platform build (e.g. numpy 2.x breaks tensorflow-macos 2.16.2 on macOS).
   "pandas==3.0.2",
   "scikit-learn==1.8.0",
-  "tensorflow==2.21.0",
   "joblib==1.5.3",
   "pyyaml==6.0.3",
   "scapy==2.7.0",

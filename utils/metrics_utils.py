@@ -49,7 +49,7 @@ def plot_classification_report(metrics: dict, y_true, y_pred, title: str = "Mode
     # Bar chart
     keys = ["accuracy", "precision", "recall", "f1_score"]
     values = [metrics.get(k, 0) for k in keys]
-    sns.barplot(x=keys, y=values, palette="pastel", ax=axes[0])
+    sns.barplot(x=keys, y=values, hue=keys, palette="pastel", legend=False, ax=axes[0])
     axes[0].set_title("Classification Metrics")
     axes[0].set_ylim(0, 1.0)
     axes[0].set_ylabel("Score")
@@ -90,7 +90,7 @@ def plot_feature_importance(importances: np.ndarray, feature_names: list, title:
 
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(10, max(4, top_n // 2)))
-    sns.barplot(x=top_scores, y=top_names, palette="Blues_d", ax=ax)
+    sns.barplot(x=top_scores, y=top_names, hue=top_names, palette="Blues_d", legend=False, ax=ax)
     ax.set_title(title)
     ax.set_xlabel("Importance Score")
     plt.tight_layout()

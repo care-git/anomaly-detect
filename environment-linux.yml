@@ -1,5 +1,5 @@
 # environment-linux.yml
-# Linux — x86_64 (tested on Arch Linux, Ryzen 5 5600x + RTX 3060)
+# Linux — x86_64 (tested on Arch Linux, Ryzen 5 5600x + NVIDIA RTX 3060)
 #
 # Usage:
 #   conda env create -f environment-linux.yml

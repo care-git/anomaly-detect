@@ -24,7 +24,9 @@ dependencies:
   - python=3.12
 
   # Core ML stack
-  - numpy=2.4.4
+  # numpy is pinned to 1.x — tensorflow-macos 2.16.2 requires numpy<2.0.
+  # This will resolve once Apple releases tensorflow-macos with numpy 2.x support.
+  - numpy=1.26.4
   - pandas=3.0.2
   - scikit-learn=1.8.0
   - joblib=1.5.3

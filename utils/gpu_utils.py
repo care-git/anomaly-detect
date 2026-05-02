@@ -1,5 +1,12 @@
 # utils/gpu_utils.py
 
+import os
+
+# Suppress TensorFlow C++ INFO and WARNING messages before TF is imported.
+# These bypass Python logging and print with a different format, polluting
+# the terminal output. Level 2 = suppress INFO + WARNING, keep ERROR + FATAL.
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+
 from utils.logger import get_logger
 
 logger = get_logger(__name__, "INFO")
