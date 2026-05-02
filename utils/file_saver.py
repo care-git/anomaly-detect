@@ -6,7 +6,6 @@ import joblib
 import json
 from datetime import datetime
 from scapy.all import wrpcap
-from tensorflow.keras.models import save_model
 
 from utils.logger import get_logger
 
@@ -95,10 +94,13 @@ def save_dataframe(df, path):
 def save_keras_model(model, path):
     """
     Saves a compiled Keras model to disk.
-    
+
     Parameters:
         model: Keras model object.
-        path (str): Destination file path."""
+        path (str): Destination file path.
+    """
+    from tensorflow.keras.models import save_model
+    
     ensure_dir(path)
     save_model(model, path)
     logger.info("Keras model saved: %s", path)
