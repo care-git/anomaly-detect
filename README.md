@@ -247,11 +247,132 @@ anomaly-detect/
 
 ## Testing
 
+### Running the suite
+
+Activate the conda environment for your platform before running tests. The suite relies on platform-specific packages (TensorFlow, tensorflow-metal, cuML) that are not available cross-platform.
+
 ```bash
-pytest tests/
-pytest tests/ -v          # verbose
-pytest tests/ -k svm      # run tests matching a keyword
+# Full suite — recommended before any commit
+python -m pytest tests/
+
+# Verbose output (shows each test name)
+python -m pytest tests/ -v
+
+# Stop on first failure
+python -m pytest tests/ -x
+
+# Run tests matching a keyword
+python -m pytest tests/ -k svm
+python -m pytest tests/ -k autoencoder
 ```
+
+### Test structure
+
+```
+tests/
+├── conftest.py                  # Shared fixtures (labelled_df, normal_df, labelled_csv, normal_csv)
+├── test_capture.py              # Packet capture and live monitor
+├── test_dataset_utils.py        # Dataset combine / split / balance
+├── test_detector.py             # File-based and live detection
+├── test_preprocessor.py         # PCAP feature extraction
+├── test_trainer.py              # Training, filtering, cross-validation for all 3 models
+├── test_cli/
+│   └── test_main.py             # CLI argument parsing and handler dispatch
+├── test_models/
+│   ├── test_autoencoder.py      # AE training, threshold, save/load, metadata
+│   ├── test_benchmark.py        # Three-model benchmark, output files, normal-only AE
+│   ├── test_random_forest.py    # RF training, feature importance, save/load
+│   └── test_svm.py              # SVM all kernels (linear, rbf, poly), save/load
+├── test_platform/
+│   ├── test_macos.py            # macOS-specific: Metal GPU, ANSI, no DirectML/WSL2 in logs
+│   ├── test_linux.py            # Linux-specific: RAPIDS hint, no DirectML, eth0 config docs
+│   ├── test_windows.py          # Windows-specific: ANSI ctypes, DirectML, WSL2 hint, Npcap
+│   └── test_wsl2.py             # WSL2-specific: detection signals, Linux paths, CUDA GPU
+├── test_siem/
+│   └── test_wazuh_forwarder.py  # File/syslog/both modes, dry_run, timestamps, failure paths
+└── test_utils/
+    ├── test_config_loader.py    # Default/custom path, caching, cache invalidation
+    ├── test_gpu_utils.py        # cuml_available, setup_gpu idempotency, platform log branches
+    ├── test_metrics.py          # pretty_print_metadata, all 4 plot functions save PNG
+    └── test_progress.py         # tqdm_bar, _ansi_supported branches, spinner lifecycle
+```
+
+### Markers
+
+Markers filter tests by platform or resource requirement. They are defined in `pyproject.toml` and can be combined.
+
+| Marker | Meaning |
+|---|---|
+| `macos` | macOS (darwin) only — skipped on Linux and Windows |
+| `linux` | Linux only — skipped on macOS and Windows |
+| `windows` | Windows (win32) only — skipped on macOS and Linux |
+| `wsl2` | WSL2 only — skipped unless kernel release contains `microsoft` or `WSL_DISTRO_NAME` is set |
+| `gpu` | Requires a physical GPU — skipped if no devices found |
+| `slow` | Long-running tests — omit with `-m "not slow"` for fast feedback loops |
+
+```bash
+# Run only the platform tests relevant to this machine
+python -m pytest tests/test_platform/ -m macos       # on macOS
+python -m pytest tests/test_platform/ -m linux       # on Linux / WSL2
+python -m pytest tests/test_platform/ -m windows     # on Windows
+
+# Run only GPU tests
+python -m pytest -m gpu
+
+# Exclude slow tests
+python -m pytest -m "not slow"
+
+# Combine: GPU tests that are not slow
+python -m pytest -m "gpu and not slow"
+```
+
+### Per-platform commands
+
+**macOS (Apple Silicon)**
+```bash
+conda activate anomaly-detect
+python -m pytest tests/
+# Platform tests for macOS run automatically; Linux/Windows/WSL2 files are skipped.
+```
+
+**Linux (native)**
+```bash
+conda activate anomaly-detect
+python -m pytest tests/
+# test_platform/test_linux.py runs; macOS/Windows/WSL2 files are skipped.
+# cuML tests skip automatically if RAPIDS is not installed.
+```
+
+**Linux (WSL2 inside Windows)**
+```bash
+conda activate anomaly-detect
+python -m pytest tests/
+# test_platform/test_linux.py and test_platform/test_wsl2.py both run.
+# test_platform/test_macos.py and test_platform/test_windows.py are skipped.
+```
+
+**Windows (native)**
+```bash
+conda activate anomaly-detect
+python -m pytest tests/
+# test_platform/test_windows.py runs; all others are skipped.
+# GPU tests skip automatically if no DirectX 12 device is found.
+```
+
+### GPU tests
+
+`@pytest.mark.gpu` tests are skipped automatically when no GPU is present — they do not require any manual flag. To explicitly run or exclude them:
+
+```bash
+python -m pytest -m gpu        # only GPU tests (skip if no device)
+python -m pytest -m "not gpu"  # skip all GPU tests regardless
+```
+
+On **macOS**, GPU tests verify Metal device detection via `tensorflow-metal`. On **Linux/WSL2**, they verify CUDA passthrough. On **Windows**, they verify DirectML device enumeration.
+
+### WSL2 packet capture note
+
+WSL2 uses a virtualised network adapter separate from the Windows host. Packet capture tests that exercise Scapy against a real interface are skipped inside WSL2 by default. If you have enabled mirrored networking (`networkingMode=mirrored` in `.wslconfig` on Windows 11 22H2+), you can run capture tests manually against the mirrored interface.
 
 ---
 
