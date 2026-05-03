@@ -28,7 +28,7 @@ dependencies = [
   # environment files handle installation with the correct versions for each
   # platform. Pinning them here causes pip install -e . to override the
   # platform build (e.g. numpy 2.x breaks tensorflow-macos 2.16.2 on macOS).
-  "pandas==3.0.2",
+  "pandas==2.2.3",
   "scikit-learn==1.8.0",
   "joblib==1.5.3",
   "pyyaml==6.0.3",

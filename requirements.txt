@@ -3,8 +3,8 @@
 # Python >=3.10 recommended
 
 # Core ML libraries
-numpy==2.4.4
-pandas==3.0.2
+numpy==1.26.4
+pandas==2.2.3
 scikit-learn==1.8.0
 tensorflow==2.21.0
 joblib==1.5.3

@@ -19,8 +19,8 @@ dependencies:
   - python=3.12
 
   # Core ML stack
-  - numpy=2.4.4
-  - pandas=3.0.2
+  - numpy=1.26.4
+  - pandas=2.2.3
   - scikit-learn=1.8.0
   - tensorflow=2.21.0
   - joblib=1.5.3
@@ -37,8 +37,8 @@ dependencies:
   - tqdm=4.67.3
 
   # GPU acceleration (optional — requires NVIDIA GPU + CUDA drivers)
-  # Uncomment and set use_gpu: true in config/config.yml to enable.
-  # - cuml
+  # Set use_gpu: true in config/config.yml to enable.
+  - cuml<=26.04.00
 
   # Build tooling
   - pip
