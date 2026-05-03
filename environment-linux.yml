@@ -44,3 +44,4 @@ dependencies:
   - pip
   - pip:
     - setuptools-scm==10.0.5
+    - pytest==9.0.3

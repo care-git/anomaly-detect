@@ -48,3 +48,4 @@ dependencies:
     - tensorflow-macos==2.16.2   # TF for Apple Silicon; numpy<2.0 required (see above)
     - tensorflow-metal==1.2.0    # Metal GPU backend (Autoencoder trains on GPU automatically)
     - setuptools-scm==10.0.5
+    - pytest==9.0.3
