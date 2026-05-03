@@ -27,6 +27,13 @@ training:
   ae_epochs: 100
   ae_patience: 5
   ae_batch_size: 32
+  # When a labelled dataset is provided, the autoencoder trains on normal-only
+  # rows by default (label == 0). Set to true to include anomalous rows, which
+  # will degrade anomaly detection performance but may be useful for debugging.
+  ae_train_on_anomalous: false
+  # Percentile of normal-traffic training MSE used to set the anomaly threshold.
+  # Lower values = more sensitive (more false positives); higher = more conservative.
+  ae_threshold_percentile: 95
 
   # SVM backend — 'linear' uses LinearSVC (faster, O(n) training time) or
   # any sklearn SVC kernel string e.g. 'rbf', 'poly' (O(n²), more expressive)

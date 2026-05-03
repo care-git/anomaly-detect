@@ -4,6 +4,7 @@ import os
 import numpy as np
 import joblib
 import json
+from datetime import datetime
 from keras.models import Model, load_model
 from keras.layers import Input, Dense
 from keras.optimizers import Adam
@@ -57,6 +58,10 @@ class AutoencoderModel(BaseModel):
         self.threshold = threshold
         self.input_dim = input_dim
         self.scaler = StandardScaler()
+        self.training_dataset = None
+        self._trained_at = None
+        self._n_training_samples = None
+        self._threshold_percentile = 95
 
     def build_model(self):
         """
@@ -122,9 +127,13 @@ class AutoencoderModel(BaseModel):
         mse = np.mean(np.square(X_scaled - recon), axis=1)
         
         logger.info("[Train MSE] mean: %.6f | std: %.6f", mse.mean(), mse.std())
-        self.threshold = mse.mean() + 3 * mse.std()
-        
-        logger.info("Training complete. Anomaly threshold set to %.6f", self.threshold)
+        percentile = cfg.get("ae_threshold_percentile", 95)
+        self.threshold = float(np.percentile(mse, percentile))
+        self._threshold_percentile = percentile
+        self._n_training_samples = X.shape[0]
+        self._trained_at = datetime.now().isoformat()
+
+        logger.info("Training complete. Anomaly threshold set to %.6f (p%d of train MSE)", self.threshold, percentile)
 
 
     def predict(self, X):
@@ -179,9 +188,13 @@ class AutoencoderModel(BaseModel):
         results = {
             "mse_mean": float(mse.mean()),
             "mse_std": float(mse.std()),
+            "mse_median": float(np.median(mse)),
+            "mse_iqr": float(np.percentile(mse, 75) - np.percentile(mse, 25)),
             "mse_p95": float(np.percentile(mse, 95)),
             "mae_mean": float(mae.mean()),
             "mae_std": float(mae.std()),
+            "mae_median": float(np.median(mae)),
+            "mae_iqr": float(np.percentile(mae, 75) - np.percentile(mae, 25)),
         }
 
         if y_true is not None:
@@ -219,13 +232,22 @@ class AutoencoderModel(BaseModel):
         scaler_path = os.path.join(path, 'scaler.pkl')
         save_pickle(self.scaler, scaler_path)
 
+        architecture = [self.input_dim] + [
+            layer.units for layer in self.model.layers if hasattr(layer, "units")
+        ]
+
         self.metadata = {
             "model_type": "autoencoder",
             "model_path": model_path,
             "scaler_path": scaler_path,
-            "threshold": self.threshold,
             "input_dim": self.input_dim,
-            "evaluation_metrics": metrics or {}
+            "architecture": architecture,
+            "threshold": self.threshold,
+            "threshold_percentile": self._threshold_percentile,
+            "trained_at": self._trained_at,
+            "n_training_samples": self._n_training_samples,
+            "training_dataset": self.training_dataset,
+            "evaluation_metrics": metrics or {},
         }
 
         metadata_path = os.path.join(path, 'metadata.json')

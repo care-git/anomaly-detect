@@ -17,6 +17,7 @@ logger = get_logger(__name__, "INFO")
 
 SUPERVISED_MODELS = ("random_forest", "svm")
 ALL_MODELS = ("autoencoder", "random_forest", "svm")
+COMPARISON_COLS = ("accuracy", "precision", "recall", "f1_score", "roc_auc")
 
 
 def benchmark_models(input_path: str, output_dir: str = None, test_size: float = 0.2, random_state: int = 42) -> pd.DataFrame:
@@ -68,7 +69,8 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
             model = instantiate_model(model_type, input_dim=X.shape[1])
 
             if model_type == "autoencoder":
-                X_tr, X_inner_val = train_test_split(X_train, test_size=0.1, random_state=random_state)
+                X_normal = X_train[y_train == 0]
+                X_tr, X_inner_val = train_test_split(X_normal, test_size=0.1, random_state=random_state)
                 model.train(X_tr, X_val=X_inner_val)
                 metrics = model.evaluate(X_test, y_true=y_test)
 
@@ -81,6 +83,8 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
                         output_path=os.path.join(output_dir, "autoencoder_reconstruction_loss.png")
                     )
             else:
+                if model_type == "random_forest":
+                    model.feature_names = feature_names
                 model.train(X_train, y=y_train)
                 metrics = model.evaluate(X_test, y_test)
 
@@ -92,10 +96,12 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
                         output_path=os.path.join(output_dir, f"{model_type}_evaluation.png")
                     )
 
+            model.training_dataset = os.path.abspath(input_path)
             row = {"model": model_type}
-            for k, v in metrics.items():
-                if isinstance(v, (int, float)) and v is not None:
-                    row[k] = round(v, 4)
+            for k in COMPARISON_COLS:
+                v = metrics.get(k)
+                if v is not None:
+                    row[k] = round(float(v), 4)
             rows.append(row)
 
         except Exception as e:

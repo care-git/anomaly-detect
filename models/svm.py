@@ -5,6 +5,7 @@ import warnings
 import joblib
 import json
 import numpy as np
+from datetime import datetime
 from sklearn.svm import SVC, LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.exceptions import ConvergenceWarning
@@ -58,6 +59,12 @@ class SVMModel(BaseModel):
         self.metadata = {}
         self._use_linear = False
         self._using_cuml = False
+        self.training_dataset = None
+        self._trained_at = None
+        self._n_training_samples = None
+        self._kernel = None
+        self._max_iter = None
+        self._backend_name = None
 
     def _build_model(self, use_linear: bool, max_iter: int, kernel: str = "rbf", use_gpu: bool = False):
         """Constructs the appropriate estimator (cuML or sklearn)."""
@@ -123,11 +130,18 @@ class SVMModel(BaseModel):
         else:
             backend_name = f"SVC (kernel={svm_kernel})"
 
+        self._kernel = svm_kernel
+        self._max_iter = max_iter
+        self._backend_name = backend_name
+        self._n_training_samples = len(X)
+
         logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
         with TrainingSpinner(f"Training SVM [{backend_name}]"):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=ConvergenceWarning)
                 self.model.fit(X_scaled, y)
+
+        self._trained_at = datetime.now().isoformat()
 
     def predict(self, X):
         """
@@ -225,9 +239,15 @@ class SVMModel(BaseModel):
             "model_path": model_path,
             "scaler_path": scaler_path,
             "input_dim": self.input_dim,
+            "kernel": self._kernel,
+            "backend": self._backend_name,
+            "max_iter": self._max_iter,
             "use_linear": self._use_linear,
             "using_cuml": self._using_cuml,
-            "evaluation_metrics": metrics or {}
+            "trained_at": self._trained_at,
+            "n_training_samples": self._n_training_samples,
+            "training_dataset": self.training_dataset,
+            "evaluation_metrics": metrics or {},
         }
 
         metadata_path = os.path.join(path, 'metadata.json')

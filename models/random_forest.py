@@ -4,6 +4,7 @@ import os
 import numpy as np
 import joblib
 import json
+from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, roc_auc_score
 
@@ -43,6 +44,12 @@ class RandomForestModel(BaseModel):
         self.input_dim = None
         self.metadata = {}
         self._using_cuml = False
+        self.training_dataset = None
+        self.feature_names = None
+        self._trained_at = None
+        self._n_training_samples = None
+        self._n_estimators = None
+        self._backend = None
         logger.info("Initialised Random Forest model with params: %s", rf_kwargs)
 
     def train(self, X, y=None, **kwargs):
@@ -86,6 +93,10 @@ class RandomForestModel(BaseModel):
                     spinner.update({"tree": f"{i}/{n_estimators}"})
             self._using_cuml = False
 
+        self._n_estimators = n_estimators
+        self._n_training_samples = len(X)
+        self._backend = "cuML RandomForestClassifier" if self._using_cuml else "sklearn RandomForestClassifier"
+        self._trained_at = datetime.now().isoformat()
         logger.info("Training complete.")
 
     def predict(self, X):
@@ -170,12 +181,23 @@ class RandomForestModel(BaseModel):
         model_path = os.path.join(path, "model.pkl")
         save_pickle(self.model, model_path)
 
+        importances = np.asarray(self.model.feature_importances_)
+        names = self.feature_names or [f"feature_{i}" for i in range(len(importances))]
+        top_idx = np.argsort(importances)[::-1][:5]
+        top_features = [{"feature": names[i], "importance": round(float(importances[i]), 6)} for i in top_idx]
+
         self.metadata = {
             "model_type": "random_forest",
             "model_path": model_path,
             "input_dim": self.input_dim,
+            "n_estimators": self._n_estimators,
+            "backend": self._backend,
             "using_cuml": self._using_cuml,
-            "evaluation_metrics": metrics or {}
+            "trained_at": self._trained_at,
+            "n_training_samples": self._n_training_samples,
+            "training_dataset": self.training_dataset,
+            "top_features": top_features,
+            "evaluation_metrics": metrics or {},
         }
 
         metadata_path = os.path.join(path, 'metadata.json')

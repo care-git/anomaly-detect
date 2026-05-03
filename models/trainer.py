@@ -41,6 +41,17 @@ def train_autoencoder(input_path, output_path=None):
     logger.info("Loaded training data with shape: %s", df.shape)
 
     if "label" in df.columns:
+        train_on_anomalous = config.get("training", {}).get("ae_train_on_anomalous", False)
+        if not train_on_anomalous:
+            n_before = len(df)
+            df = df[df["label"] == 0]
+            n_dropped = n_before - len(df)
+            if n_dropped > 0:
+                logger.warning(
+                    "%d anomalous rows detected in labelled dataset and dropped before "
+                    "autoencoder training. Set ae_train_on_anomalous: true in config to override.",
+                    n_dropped,
+                )
         X = df.drop(columns=["label"]).values
     else:
         X = df.values
@@ -48,6 +59,7 @@ def train_autoencoder(input_path, output_path=None):
     X_train, X_val = train_test_split(X, test_size=0.2, random_state=42)
 
     model = instantiate_model("autoencoder", input_dim=X.shape[1])
+    model.training_dataset = os.path.abspath(input_path)
     model.train(X_train, X_val=X_val)
 
     metrics = model.evaluate(X_val)
@@ -101,6 +113,8 @@ def train_random_forest(input_path, output_path=None):
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
     model = instantiate_model("random_forest", input_dim=X.shape[1])
+    model.training_dataset = os.path.abspath(input_path)
+    model.feature_names = list(df.drop(columns=["label"]).columns)
     model.train(X_train, y=y_train)
 
     metrics = model.evaluate(X_val, y_val, log_metrics=False)
@@ -153,6 +167,7 @@ def train_svm(input_path, output_path=None):
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
     model = instantiate_model("svm", input_dim=X.shape[1])
+    model.training_dataset = os.path.abspath(input_path)
     model.train(X_train, y=y_train)
 
     metrics = model.evaluate(X_val, y_val, log_metrics=False)
@@ -220,7 +235,8 @@ def cross_validate_model(model_type: str, input_path: str, k: int = 5) -> dict:
         model = instantiate_model(model_type, input_dim=X.shape[1])
 
         if model_type == "autoencoder":
-            X_tr, X_inner_val = train_test_split(X_train, test_size=0.1, random_state=42)
+            X_tr = X_train[y_train == 0] if y_train is not None else X_train
+            X_tr, X_inner_val = train_test_split(X_tr, test_size=0.1, random_state=42)
             model.train(X_tr, X_val=X_inner_val)
             fold_metrics = model.evaluate(X_val, y_true=y_val)
         else:
