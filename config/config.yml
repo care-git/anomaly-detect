@@ -28,24 +28,27 @@ training:
   input: data/processed/preprocessed.csv
   save_dir: data/models/
   model_type: autoencoder
-  n_estimators: 100
 
   # Autoencoder hyperparameters
   ae_epochs: 100
   ae_patience: 5
   ae_batch_size: 32
 
+  # Percentile of normal-traffic training MSE used to set the anomaly threshold.
+  # Lower values = more false positives; higher = more false negatives.
+  ae_threshold_percentile: 95
+  
   # When using a labelled dataset, the autoencoder trains on normal-only
   # rows by default (label == 0). Set to true to include anomalous rows.
   ae_train_on_anomalous: false
 
-  # Percentile of normal-traffic training MSE used to set the anomaly threshold.
-  # Lower values = more false positives; higher = more false negatives.
-  ae_threshold_percentile: 95
+  # Random Forest hyperparameter
+  n_estimators: 100
 
-  # SVM backend - 'linear' uses LinearSVC (faster, O(n) training time) or
+  # SVM hyperperameters
+  # backend - 'linear' uses LinearSVC (faster, O(n) training time) or
   # any sklearn SVC kernel string: 'rbf', 'poly', sigmoid (O(n²), more expressive)
-  # Kernel strings 'poly' and 'sigmoid' are not compatible with GPU acceleration.
+  # 'poly' and 'sigmoid' are not compatible with GPU acceleration.
   svm_kernel: linear
   svm_max_iter: 2000
 
