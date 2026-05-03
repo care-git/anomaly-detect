@@ -14,7 +14,7 @@ Designed for use by security analysts, researchers, and engineers needing a flex
 - **k-fold cross-validation** for robust evaluation of any model
 - **Visual evaluation** - classification report charts, feature importance, reconstruction loss distribution, CV results
 - **ROC-AUC, F1, precision, recall** metrics across all models; MSE/MAE reconstruction metrics for the Autoencoder
-- **GPU acceleration** - TensorFlow uses Metal (M1) or CUDA automatically; RF and SVM can use RAPIDS cuML on Linux + NVIDIA
+- **GPU acceleration** - TensorFlow uses Metal (Apple Silicon), CUDA (Linux), or DirectML (Windows); RF and SVM can use RAPIDS cuML on Linux + NVIDIA
 - **Wazuh SIEM integration** - alert forwarding via rotating log file, syslog UDP, or both
 - **Unified CLI** with per-command help, `--config` override, and `--version`
 - Fully customisable via YAML config
@@ -40,19 +40,52 @@ git lfs pull          # download compiled dataset files
 
 Use the file that matches your platform:
 
-**macOS - Apple Silicon (M1/M2/M3)**
+**macOS — Apple Silicon (M1/M2/M3)**
 ```bash
 conda env create -f environment-mac.yml
 conda activate anomaly-detect
 pip install -e .
 ```
 
-**Linux - x86_64**
+**Linux — x86_64**
 ```bash
 conda env create -f environment-linux.yml
 conda activate anomaly-detect
 pip install -e .
 ```
+
+**Windows 10/11 — native**
+```bash
+conda env create -f environment-windows.yml
+conda activate anomaly-detect
+pip install -e .
+```
+
+> **Packet capture on Windows** requires [Npcap](https://npcap.com) to be installed before running any `anomaly-detect capture` commands. Install it via winget or download the installer manually from npcap.com:
+> ```powershell
+> winget install --id Npcap.Npcap
+> ```
+> Network interface names differ from Linux/macOS — use `"Wi-Fi"` or `"Ethernet"` (check Device Manager or run `getmac /v`). Update `interface` in `config/config.yml` accordingly.
+
+**Windows — WSL2 (recommended for NVIDIA GPU users)**
+
+WSL2 runs a real Linux kernel inside Windows and gives full CUDA and cuML support. Install WSL2 and enable virtualisation in PowerShell, then follow the Linux installation instructions above inside your WSL2 terminal after restarting your PC:
+
+```powershell
+# In PowerShell (run as Administrator) — one-time WSL2 setup
+wsl --install
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+wsl --set-default-version 2    # optional - use WSL2 by default
+```
+
+```bash
+# Inside WSL2 terminal — same as Linux
+conda env create -f environment-linux.yml
+conda activate anomaly-detect
+pip install -e .
+```
+
+> **Packet capture in WSL2** has caveats. WSL2 uses a virtualised network adapter separate from the Windows host by default. On Windows 11 22H2 or later you can enable mirrored networking (`[wsl2] networkingMode=mirrored` in `.wslconfig`) to share the host interface, but results vary by hardware. If capture is a requirement, use the native Windows installation instead.
 
 **pip only (no conda)**
 ```bash
@@ -61,17 +94,28 @@ pip install -e .
 
 ### 3. GPU acceleration (optional)
 
-**Apple Silicon** - `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
+**Apple Silicon** — `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
 
-**Linux + NVIDIA GPU (RAPIDS cuML)** - uncomment `# - cuml` in `environment-linux.yml`, recreate the environment, then enable GPU in config:
+**Linux + NVIDIA GPU (RAPIDS cuML)** — cuML is already included in `environment-linux.yml`. Recreate the environment if needed, then enable GPU in config:
 
 ```bash
-# In environment-linux.yml: uncomment `# - cuml` under GPU acceleration
 conda env create -f environment-linux.yml
 conda activate anomaly-detect
 ```
 
-Set `use_gpu: true` in `config/config.yml`. When cuML is present, Random Forest and SVM training use GPU-accelerated backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
+Set `use_gpu: true` in `config/config.yml`. Random Forest and SVM training will use GPU-accelerated cuML backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
+
+**Windows + DirectML (Autoencoder only)** — DirectML enables DirectX 12 GPU acceleration for the Autoencoder on any modern NVIDIA, AMD, or Intel GPU without requiring CUDA. Uncomment `tensorflow-directml-plugin` in `environment-windows.yml`, recreate the environment, then enable GPU in config:
+
+```bash
+# In environment-windows.yml: uncomment `# - tensorflow-directml-plugin`
+conda env create -f environment-windows.yml
+conda activate anomaly-detect
+```
+
+Set `use_gpu: true` in `config/config.yml`. RF and SVM GPU acceleration is not available on Windows natively — use WSL2 for full cuML support.
+
+**Windows + WSL2 + NVIDIA GPU (full GPU support)** — follow the Linux cuML instructions above inside your WSL2 terminal. NVIDIA's CUDA drivers for WSL2 are installed at the Windows host level; no separate CUDA install is needed inside WSL2.
 
 ---
 
@@ -195,6 +239,7 @@ anomaly-detect/
 ├── tests/                    # Pytest unit test suite
 ├── environment-mac.yml       # Conda environment - macOS Apple Silicon
 ├── environment-linux.yml     # Conda environment - Linux x86_64
+├── environment-windows.yml   # Conda environment - Windows 10/11 (native)
 └── data/                     # Gitignored - captures, processed CSVs, models, logs
 ```
 

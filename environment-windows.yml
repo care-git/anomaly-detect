@@ -1,0 +1,52 @@
+# environment-windows.yml
+# Windows 10/11 - x86_64 (native, no WSL2)
+#
+# For full GPU acceleration (including cuML for RF/SVM), use WSL2 and follow
+# the Linux installation instructions in README.md instead.
+#
+# Packet capture requires Npcap: https://npcap.com
+# Install Npcap before running any 'anomaly-detect capture' commands.
+#
+# Usage:
+#   conda env create -f environment-windows.yml
+#   conda activate anomaly-detect
+#   pip install -e .
+#
+# GPU note: tensorflow-directml-plugin enables DirectX 12 GPU acceleration for
+# the Autoencoder on any DirectX 12-capable GPU (NVIDIA, AMD, Intel).
+# Uncomment the line below and set use_gpu: true in config/config.yml to enable.
+# cuML (RF/SVM GPU acceleration) is not available on Windows - use WSL2 for that.
+
+name: anomaly-detect
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+
+  # Core ML stack
+  - numpy=1.26.4
+  - pandas=2.2.3
+  - scikit-learn=1.8.0
+  - joblib=1.5.3
+
+  # Packet analysis (requires Npcap on Windows - see above)
+  - scapy=2.7.0
+
+  # Visualisation
+  - matplotlib=3.10.9
+  - seaborn=0.13.2
+
+  # Utilities
+  - pyyaml=6.0.3
+  - tqdm=4.67.3
+
+  # Build tooling
+  - pip
+  - pip:
+    - tensorflow-cpu               # CPU-only TensorFlow
+    - tensorflow-directml-plugin   # Optional: DirectX 12 GPU for Autoencoder
+    #                              # Requires a DirectX 12-capable GPU (NVIDIA/AMD/Intel)
+    #                              # Set use_gpu: true in config/config.yml after enabling
+    - setuptools-scm

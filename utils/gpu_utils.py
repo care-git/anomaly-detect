@@ -2,6 +2,7 @@
 
 import gc
 import os
+import sys
 
 # Suppress TensorFlow C++ INFO and WARNING messages before TF is imported.
 # These bypass Python logging and print with a different format, polluting
@@ -42,7 +43,13 @@ def setup_gpu() -> None:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         if gpus:
-            logger.info("TensorFlow GPU devices: %s", [g.name for g in gpus])
+            if sys.platform == "win32":
+                logger.info(
+                    "TensorFlow GPU devices: %s (DirectML - DirectX 12 acceleration).",
+                    [g.name for g in gpus],
+                )
+            else:
+                logger.info("TensorFlow GPU devices: %s", [g.name for g in gpus])
         else:
             logger.info("TensorFlow: no GPU found - training on CPU.")
     except Exception:
@@ -51,8 +58,16 @@ def setup_gpu() -> None:
     if _CUML_AVAILABLE:
         logger.info("cuML (RAPIDS) available - GPU-accelerated RF/SVM enabled.")
     else:
-        logger.info("cuML not available - RF/SVM will use sklearn (CPU). "
-                    "Install RAPIDS via conda to enable GPU support.")
+        if sys.platform == "win32":
+            logger.info(
+                "cuML not available - RF/SVM will use sklearn (CPU). "
+                "cuML requires Linux or WSL2; see README for the WSL2 installation path."
+            )
+        else:
+            logger.info(
+                "cuML not available - RF/SVM will use sklearn (CPU). "
+                "Install RAPIDS via conda to enable GPU support."
+            )
 
     _GPU_CONFIGURED = True
 

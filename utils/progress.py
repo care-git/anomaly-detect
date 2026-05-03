@@ -6,6 +6,37 @@ import time
 from tqdm import tqdm
 
 
+def _ansi_supported() -> bool:
+    """
+    Returns True if the current terminal supports ANSI escape sequences.
+
+    On Windows, attempts to enable Virtual Terminal Processing via the Win32
+    console API. Legacy CMD and older PowerShell hosts that cannot enable it
+    will receive False, triggering the ASCII fallback in TrainingSpinner.
+    All UNIX-like terminals return True unconditionally.
+    """
+    if sys.platform != "win32":
+        return True
+    try:
+        import ctypes
+        import ctypes.wintypes
+        STD_ERROR_HANDLE = -12
+        ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.GetStdHandle(STD_ERROR_HANDLE)
+        mode = ctypes.wintypes.DWORD()
+        if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+            return False
+        if mode.value & ENABLE_VIRTUAL_TERMINAL_PROCESSING:
+            return True
+        return bool(kernel32.SetConsoleMode(handle, mode.value | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    except Exception:
+        return False
+
+
+_ANSI = _ansi_supported()
+
+
 def tqdm_bar(iterable, desc="", unit="it", total=None, leave=True, disable=False):
     """
     Wraps an iterable with a tqdm progress bar.
@@ -28,9 +59,13 @@ class TrainingSpinner:
     """
     Thread-based spinner for training operations.
 
-    Displays a rotating braille character with live key-value stats and elapsed
-    time on a single overwriting line. Call update() from model training loops
-    to push per-step metrics (e.g. epoch, loss, tree count).
+    Displays a rotating character with live key-value stats and elapsed time on
+    a single overwriting line. Uses braille frames and ANSI escape sequences on
+    terminals that support them; falls back to ASCII frames and space-padding on
+    Windows legacy terminals (CMD, older PowerShell) that do not.
+
+    Call update() from model training loops to push per-step metrics (e.g.
+    epoch, loss, tree count).
 
     Usage:
         with TrainingSpinner("Training SVM") as spinner:
@@ -42,7 +77,10 @@ class TrainingSpinner:
                 spinner.update({"tree": f"{i+1}/{n}"})
     """
 
-    _FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    _FRAMES_ANSI  = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    _FRAMES_ASCII = r"|/-\|/-\ "
+    _MARKS_ANSI   = ("✓", "✗")
+    _MARKS_ASCII  = ("done", "FAILED")
 
     def __init__(self, desc: str = "Training"):
         self._desc = desc
@@ -51,6 +89,8 @@ class TrainingSpinner:
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._start_time: float = 0.0
+        self._frames = self._FRAMES_ANSI if _ANSI else self._FRAMES_ASCII
+        self._marks  = self._MARKS_ANSI  if _ANSI else self._MARKS_ASCII
 
     def update(self, stats: dict) -> None:
         """Push new key-value pairs to display alongside the spinner."""
@@ -66,7 +106,7 @@ class TrainingSpinner:
                 stats = dict(self._stats)
             parts = " | ".join(f"{k}: {v}" for k, v in stats.items())
             right = f" | {parts}" if parts else ""
-            line = f"\r{self._FRAMES[frame_idx % len(self._FRAMES)]}  {self._desc}{right} | {elapsed_str}"
+            line = f"\r{self._frames[frame_idx % len(self._frames)]}  {self._desc}{right} | {elapsed_str}"
             sys.stderr.write(line)
             sys.stderr.flush()
             frame_idx += 1
@@ -84,9 +124,13 @@ class TrainingSpinner:
             self._thread.join()
         elapsed = time.time() - self._start_time
         elapsed_str = f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}"
-        mark = "✓" if success else "✗"
-        # \033[K clears from the cursor to end of line, handling any length of previous content
-        sys.stderr.write(f"\r{mark}  {self._desc} - done in {elapsed_str}\033[K\n")
+        mark = self._marks[0] if success else self._marks[1]
+        if _ANSI:
+            # \033[K clears from cursor to end of line, handling any length of previous content
+            sys.stderr.write(f"\r{mark}  {self._desc} - done in {elapsed_str}\033[K\n")
+        else:
+            line = f"\r{mark}  {self._desc} - done in {elapsed_str}"
+            sys.stderr.write(line.ljust(79) + "\n")
         sys.stderr.flush()
 
     def __enter__(self) -> "TrainingSpinner":

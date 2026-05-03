@@ -1,5 +1,10 @@
 # === Capture Settings ===
 capture:
+  # Network interface to capture on. This is platform-specific:
+  #   macOS:   en0 (Wi-Fi), en1 (Ethernet)
+  #   Linux:   eth0, ens3, wlan0 (run 'ip link' to list interfaces)
+  #   Windows: "Wi-Fi", "Ethernet" (run 'getmac /v' or check Device Manager)
+  #            Requires Npcap to be installed: https://npcap.com
   interface: eth0
   duration: 30
   packet_count: 100
