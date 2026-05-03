@@ -3,7 +3,7 @@
 import unittest
 import tempfile
 import os
-from keras import Sequential
+from keras import Sequential, Input
 from keras.layers import Dense
 from utils.file_saver import (
     save_pickle,
@@ -38,7 +38,7 @@ class TestFileSaverUtils(unittest.TestCase):
         self.assertTrue(os.path.getsize(path) > 0)
 
     def test_save_keras_model_creates_file(self):
-        model = Sequential([Dense(4, input_shape=(3,), activation='relu'), Dense(2)])
+        model = Sequential([Input(shape=(3,)), Dense(4, activation='relu'), Dense(2)])
         path = os.path.join(self.temp_dir.name, "keras_model.keras")
         save_keras_model(model, path)
 

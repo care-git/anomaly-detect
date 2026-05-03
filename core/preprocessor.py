@@ -150,7 +150,8 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
     df = df[df[numeric_cols].notna().any(axis=1)]
-    df.fillna(0, inplace=True)
+    num_cols = df.select_dtypes(include='number').columns
+    df[num_cols] = df[num_cols].fillna(0)
     df = drop_columns(df, ['src', 'dst'])   # Remove unnecessary IP address columns if present
 
     return df

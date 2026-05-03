@@ -46,13 +46,13 @@ training:
   # SVM backend - 'linear' uses LinearSVC (faster, O(n) training time) or
   # any sklearn SVC kernel string: 'rbf', 'poly', sigmoid (O(n²), more expressive)
   # Kernel strings 'poly' and 'sigmoid' are not compatible with GPU acceleration.
-  svm_kernel: linear
+  svm_kernel: rbf
   svm_max_iter: 2000
 
   # GPU acceleration - requires RAPIDS cuML 
   # When true and cuML is present, RF and SVM use GPU-accelerated backends.
   # Falls back to sklearn silently if cuML is not installed.
-  use_gpu: false
+  use_gpu: true
 
 # === Detection Settings ===
 detection:
