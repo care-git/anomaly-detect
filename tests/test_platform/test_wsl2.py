@@ -1,8 +1,8 @@
 # tests/test_platform/test_wsl2.py
 #
-# WSL2-specific integration tests.  WSL2 presents as Linux (sys.platform ==
+# WSL2-specific integration tests. WSL2 presents as Linux (sys.platform ==
 # "linux") but its kernel uname release string contains "microsoft", and the
-# WSL_DISTRO_NAME environment variable is set.  Both signals are checked so the
+# WSL_DISTRO_NAME environment variable is set. Both signals are checked so the
 # skip condition matches either indicator.
 
 import os
@@ -62,12 +62,12 @@ def test_wsl2_uname_contains_microsoft_or_env_var_set():
 
 
 def test_sys_platform_is_linux_under_wsl2():
-    """WSL2 must report as linux, not win32 — ensures Linux code paths are taken."""
+    """WSL2 must report as linux, not win32 - ensures Linux code paths are taken."""
     assert sys.platform == "linux"
 
 
 # ---------------------------------------------------------------------------
-# ANSI support — WSL2 takes the Linux path (True unconditionally)
+# ANSI support - WSL2 takes the Linux path (True unconditionally)
 # ---------------------------------------------------------------------------
 
 def test_ansi_supported_returns_true_under_wsl2():
@@ -75,13 +75,13 @@ def test_ansi_supported_returns_true_under_wsl2():
 
 
 # ---------------------------------------------------------------------------
-# GPU — WSL2 uses the Linux/RAPIDS path
+# GPU - WSL2 uses the Linux/RAPIDS path
 # ---------------------------------------------------------------------------
 
 def test_setup_gpu_logs_rapids_hint_under_wsl2_when_cuml_unavailable():
     """Without cuML, WSL2 should suggest the Linux/RAPIDS installation path."""
     if gu._CUML_AVAILABLE:
-        pytest.skip("cuML present — no-cuML branch not exercised")
+        pytest.skip("cuML present - no-cuML branch not exercised")
     gu._GPU_CONFIGURED = False
     from unittest.mock import patch
     with patch("utils.gpu_utils.logger") as mock_logger:
@@ -102,6 +102,6 @@ def test_cuda_gpu_visible_under_wsl2():
     import tensorflow as tf
     gpus = tf.config.list_physical_devices("GPU")
     assert len(gpus) >= 1, (
-        "No GPU found under WSL2 — is CUDA passthrough configured? "
+        "No GPU found under WSL2 - is CUDA passthrough configured? "
         "See README for WSL2 GPU setup instructions."
     )

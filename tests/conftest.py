@@ -1,4 +1,5 @@
 # tests/conftest.py
+
 # Shared fixtures available to all test modules.
 
 import numpy as np
@@ -8,7 +9,8 @@ import pytest
 
 @pytest.fixture
 def labelled_df():
-    """20-row binary-labelled DataFrame — 10 normal (label=0), 10 anomalous (label=1).
+    """
+    20-row binary-labelled DataFrame - 10 normal (label=0), 10 anomalous (label=1).
 
     Normal samples cluster near the origin; anomalous samples are offset by 3
     units in every feature dimension, giving clear class separation so supervised

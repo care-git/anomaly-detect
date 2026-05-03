@@ -1,7 +1,6 @@
 # tests/test_utils/test_progress.py
 
 import sys
-import time
 import pytest
 
 from utils.progress import TrainingSpinner, _ansi_supported, tqdm_bar
@@ -57,7 +56,7 @@ def test_ansi_supported_false_on_windows_when_ctypes_unavailable(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# TrainingSpinner — frame / mark selection
+# TrainingSpinner - frame / mark selection
 # ---------------------------------------------------------------------------
 
 def test_spinner_uses_ansi_frames_when_ansi_enabled(monkeypatch):
@@ -75,7 +74,7 @@ def test_spinner_uses_ascii_frames_when_ansi_disabled(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# TrainingSpinner — start / stop lifecycle
+# TrainingSpinner - start / stop lifecycle
 # ---------------------------------------------------------------------------
 
 def test_spinner_context_manager_completes_without_error(monkeypatch):
@@ -130,7 +129,7 @@ def test_spinner_stop_failure_ansi_writes_cross(monkeypatch, capsys):
 
 
 # ---------------------------------------------------------------------------
-# TrainingSpinner — update
+# TrainingSpinner - update
 # ---------------------------------------------------------------------------
 
 def test_spinner_update_stores_stats(monkeypatch):
@@ -168,7 +167,7 @@ def test_spinner_update_merges_multiple_keys(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# TrainingSpinner — elapsed time in output
+# TrainingSpinner - elapsed time in output
 # ---------------------------------------------------------------------------
 
 def test_spinner_output_contains_elapsed_time(monkeypatch, capsys):

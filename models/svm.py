@@ -74,9 +74,9 @@ class SVMModel(BaseModel):
                 return _cuSVC(probability=True, kernel="linear" if use_linear else kernel)
             # poly/sigmoid: cuML's GPU kernel cache state is CUDA-level - even a fresh
             # Python clone triggers "Working set already initialized" error on the second fit.
-            # sklearn 1.8 also removed both cv='prefit' and prefit=True from
-            # CalibratedClassifierCV, so no prefit calibration path exists. Fall back to
-            # sklearn SVC, which handles probability calibration correctly for all kernels, but is slower.
+            # sklearn 1.8 also removed both cv='prefit' and prefit=True from CalibratedClassifierCV
+            # because they hate me, so no prefit calibration path exists. Fall back to sklearn SVC,
+            # which handles probability calibration correctly for all kernels, but is slower -> D:
             logger.warning(
                 "cuML SVC does not support probability calibration for kernel='%s' "
                 "- falling back to sklearn SVC.", kernel

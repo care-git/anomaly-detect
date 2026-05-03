@@ -1,8 +1,10 @@
 # environment-mac.yml
-# macOS - Apple Silicon (M1/M2/M3)
+
+# macOS - Apple Silicon M1/M2/M3 (tested on Sequoia, M1 Macbook Pro)
 #
 # TensorFlow is installed via pip below. Apple distributes tensorflow-macos
 # and tensorflow-metal as pip wheels only - there is no conda package.
+#
 # Python 3.12 is used because tensorflow-macos does not yet have stable
 # Python 3.13 support on macOS.
 #
@@ -13,7 +15,7 @@
 #
 # GPU note: tensorflow-metal enables Metal GPU acceleration for the Autoencoder
 # automatically - no config change needed. The use_gpu flag in config.yml
-# controls cuML (RF/SVM), which is not available on macOS; leave it false.
+# controls cuML (RF/SVM), which is not available on macOS; leave it as false.
 
 name: anomaly-detect
 channels:
@@ -24,8 +26,7 @@ dependencies:
   - python=3.12
 
   # Core ML stack
-  # numpy is pinned to 1.x - tensorflow-macos 2.16.2 requires numpy<2.0.
-  # This will resolve once Apple releases tensorflow-macos with numpy 2.x support.
+  # numpy is pinned to 1.x as tensorflow-macos 2.16.2 requires numpy<2.0.
   - numpy=1.26.4
   - pandas=2.2.3
   - scikit-learn=1.8.0
@@ -45,7 +46,7 @@ dependencies:
   # Build tooling
   - pip
   - pip:
-    - tensorflow-macos==2.16.2   # TF for Apple Silicon; numpy<2.0 required (see above)
-    - tensorflow-metal==1.2.0    # Metal GPU backend (Autoencoder trains on GPU automatically)
+    - tensorflow-macos==2.16.2   # TF for Apple Silicon
+    - tensorflow-metal==1.2.0    # Metal GPU backend
     - setuptools-scm==10.0.5
     - pytest==9.0.3

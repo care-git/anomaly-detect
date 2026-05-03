@@ -1,7 +1,7 @@
 # tests/test_platform/test_windows.py
 #
-# Windows-specific integration tests.  These tests run against the real Win32
-# host — no sys.platform mocking.  Skip silently on macOS and Linux.
+# Windows-specific integration tests. These tests run against the real Win32
+# host - no sys.platform mocking.  Skip silently on macOS and Linux.
 
 import sys
 
@@ -47,7 +47,7 @@ def test_ansi_supported_does_not_raise_on_windows():
 
 
 # ---------------------------------------------------------------------------
-# GPU — CPU-only on native Windows; WSL2 required for cuML
+# GPU - CPU-only on native Windows; WSL2 required for cuML
 # ---------------------------------------------------------------------------
 
 def test_setup_gpu_completes_without_error_on_windows():
@@ -59,7 +59,7 @@ def test_setup_gpu_completes_without_error_on_windows():
 def test_setup_gpu_logs_wsl2_hint_when_no_cuml():
     """On Windows without cuML, users should be directed to the WSL2 path."""
     if gu._CUML_AVAILABLE:
-        pytest.skip("cuML present — no-cuML branch not exercised")
+        pytest.skip("cuML present - no-cuML branch not exercised")
     gu._GPU_CONFIGURED = False
     from unittest.mock import patch
     with patch("utils.gpu_utils.logger") as mock_logger:

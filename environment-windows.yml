@@ -1,8 +1,9 @@
 # environment-windows.yml
-# Windows 10/11 - x86_64 (native, no WSL2)
+
+# Windows 10/11 - x86_64 (tested on Windows 11, Ryzen 5 5600x + NVIDIA RTX 3060)
 #
-# For full GPU acceleration (including cuML for RF/SVM), use WSL2 and follow
-# the Linux installation instructions in README.md instead.
+# For full GPU acceleration (cuML for RF/SVM), use WSL2 and follow
+# the Linux virtualisation installation instructions in the README.
 #
 # Packet capture requires Npcap: https://npcap.com
 # Install Npcap before running any 'anomaly-detect capture' commands.

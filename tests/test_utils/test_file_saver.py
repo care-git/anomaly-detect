@@ -6,7 +6,6 @@ import os
 from keras import Sequential
 from keras.layers import Dense
 from utils.file_saver import (
-    safe_save_path,
     save_pickle,
     save_json,
     save_keras_model

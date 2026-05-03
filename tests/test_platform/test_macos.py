@@ -1,8 +1,8 @@
 # tests/test_platform/test_macos.py
 #
-# macOS-specific integration tests.  These tests run against the real OS — no
-# mocking of sys.platform — so they are guarded by a skipif condition and only
-# execute on darwin hosts.  Unit-level mocking of platform branches lives in
+# macOS-specific integration tests. These tests run against the real OS - no
+# mocking of sys.platform - so they are guarded by a skipif condition and only
+# execute on darwin hosts. Unit-level mocking of platform branches lives in
 # tests/test_utils/.
 
 import sys
@@ -35,7 +35,7 @@ def reset_gpu_state():
 # ---------------------------------------------------------------------------
 
 def test_ansi_supported_returns_true_on_macos():
-    """macOS terminals always support ANSI — no ctypes negotiation needed."""
+    """macOS terminals always support ANSI - no ctypes negotiation needed."""
     assert _ansi_supported() is True
 
 
@@ -65,7 +65,7 @@ def test_metal_gpu_detected_on_apple_silicon():
     """On Apple Silicon with tensorflow-metal installed, at least one GPU is found."""
     import tensorflow as tf
     gpus = tf.config.list_physical_devices("GPU")
-    assert len(gpus) >= 1, "Expected Metal GPU device — is tensorflow-metal installed?"
+    assert len(gpus) >= 1, "Expected Metal GPU device - is tensorflow-metal installed?"
 
 
 @pytest.mark.gpu

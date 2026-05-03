@@ -1,6 +1,6 @@
 # tests/test_platform/test_linux.py
 #
-# Linux-specific integration tests.  Guards at module level so the file is
+# Linux-specific integration tests. Guards at module level so the file is
 # silently skipped on macOS and Windows hosts.
 
 import sys
@@ -43,7 +43,7 @@ def test_ansi_supported_returns_true_on_linux():
 def test_setup_gpu_logs_rapids_hint_when_cuml_unavailable():
     """Without cuML, the Linux path should suggest RAPIDS/conda installation."""
     if gu._CUML_AVAILABLE:
-        pytest.skip("cuML is present — RAPIDS hint branch not exercised")
+        pytest.skip("cuML is present - RAPIDS hint branch not exercised")
     gu._GPU_CONFIGURED = False
     from unittest.mock import patch
     with patch("utils.gpu_utils.logger") as mock_logger:
@@ -53,9 +53,9 @@ def test_setup_gpu_logs_rapids_hint_when_cuml_unavailable():
 
 
 def test_setup_gpu_does_not_log_wsl2_hint_on_native_linux():
-    """WSL2 hints target Windows users — they must not appear on native Linux."""
+    """WSL2 hints target Windows users - they must not appear on native Linux."""
     if gu._CUML_AVAILABLE:
-        pytest.skip("cuML present — no-cuML branch not exercised")
+        pytest.skip("cuML present - no-cuML branch not exercised")
     gu._GPU_CONFIGURED = False
     from unittest.mock import patch
     with patch("utils.gpu_utils.logger") as mock_logger:
@@ -67,7 +67,7 @@ def test_setup_gpu_does_not_log_wsl2_hint_on_native_linux():
 def test_setup_gpu_logs_cuml_message_when_available():
     """When cuML is importable the logger should confirm it is active."""
     if not gu._CUML_AVAILABLE:
-        pytest.skip("cuML not installed — cuML-available branch not exercised")
+        pytest.skip("cuML not installed - cuML-available branch not exercised")
     gu._GPU_CONFIGURED = False
     from unittest.mock import patch
     with patch("utils.gpu_utils.logger") as mock_logger:

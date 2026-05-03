@@ -28,7 +28,7 @@ class TestDetectorModule(unittest.TestCase):
         df.to_csv(self.input_csv, index=False)
         train_random_forest(self.input_csv, output_path=self.model_dir)
 
-        # Create test CSV without the label (mimicking preprocessed)
+        # Create test CSV without the label (mimic preprocessed)
         test_df = df.drop(columns=["label"])
         test_df.to_csv(self.input_csv, index=False)
 

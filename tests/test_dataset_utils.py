@@ -35,7 +35,7 @@ class TestDatasetUtils(unittest.TestCase):
     def test_build_combined_dataset(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             df1 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})
-            df2 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})  # duplicate — should be dropped
+            df2 = pd.DataFrame({"a": [1], "b": [2], "label": [0]})  # duplicate - should be dropped
             path1 = os.path.join(tmp_dir, "f1.csv")
             path2 = os.path.join(tmp_dir, "f2.csv")
             df1.to_csv(path1, index=False)

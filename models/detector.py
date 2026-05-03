@@ -1,7 +1,6 @@
 # models/detector.py
 
 import os
-import numpy as np
 import pandas as pd
 
 from core.capture import live_packet_monitor

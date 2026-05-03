@@ -8,13 +8,13 @@ Designed for use by security analysts, researchers, and engineers needing a flex
 
 ## Features
 
-- **Three detection models** - Autoencoder (unsupervised), Random Forest, and SVM (supervised)
+- **Three detection models** - Autoencoder (unsupervised), Random Forest (supervised), and SVM (supervised)
 - **Live and offline packet capture** via Scapy with ~30 features extracted per packet
 - **Benchmark mode** - trains all three models on the same split and produces a side-by-side comparison
 - **k-fold cross-validation** for robust evaluation of any model
 - **Visual evaluation** - classification report charts, feature importance, reconstruction loss distribution, CV results
 - **ROC-AUC, F1, precision, recall** metrics across all models; MSE/MAE reconstruction metrics for the Autoencoder
-- **GPU acceleration** - TensorFlow uses Metal (Apple Silicon) or CUDA (Linux/WSL2); RF and SVM can use RAPIDS cuML on Linux + NVIDIA. Windows native runs CPU-only — use WSL2 for full GPU support
+- **GPU acceleration** - TensorFlow uses Metal (Apple Silicon) or CUDA (Linux/WSL2); RF and SVM can use RAPIDS cuML on Linux + NVIDIA. Windows native runs CPU-only - use WSL2 for full GPU support
 - **Wazuh SIEM integration** - alert forwarding via rotating log file, syslog UDP, or both
 - **Unified CLI** with per-command help, `--config` override, and `--version`
 - Fully customisable via YAML config
@@ -33,28 +33,28 @@ git lfs install
 
 git clone https://github.com/care-git/anomaly-detect.git    # might take a moment
 cd anomaly-detect
-git lfs pull          # download compiled dataset files
+git lfs pull          # download compiled dataset files (optional)
 ```
 
 ### 2. Create the environment
 
 Use the file that matches your platform:
 
-**macOS — Apple Silicon (M1/M2/M3)**
+**macOS - Apple Silicon (M1/M2/M3)**
 ```bash
 conda env create -f environment-mac.yml
 conda activate anomaly-detect
 pip install -e .
 ```
 
-**Linux — x86_64**
+**Linux - x86_64**
 ```bash
 conda env create -f environment-linux.yml
 conda activate anomaly-detect
 pip install -e .
 ```
 
-**Windows 10/11 — native**
+**Windows 10/11 - x86_64**
 ```bash
 conda env create -f environment-windows.yml
 conda activate anomaly-detect
@@ -65,28 +65,31 @@ pip install -e .
 > ```powershell
 > winget install --id Npcap.Npcap
 > ```
-> Network interface names differ from Linux/macOS — use `"Wi-Fi"` or `"Ethernet"` (check Device Manager or run `getmac /v`). Update `interface` in `config/config.yml` accordingly.
+> Network interface names differ from Linux/macOS - use `"Wi-Fi"` or `"Ethernet"` (check Device Manager or run `getmac /v`). Update `interface` in `config/config.yml` accordingly.
 
-**Windows — WSL2 (recommended for NVIDIA GPU users)**
+**Windows - WSL2 (recommended for NVIDIA GPU users)**
 
-WSL2 runs a real Linux kernel inside Windows and gives full CUDA and cuML support. Install WSL2 and enable virtualisation in PowerShell, then follow the Linux installation instructions above inside your WSL2 terminal after restarting your PC:
+WSL2 runs a real Linux kernel inside Windows and gives full CUDA and cuML support. Install WSL2, enable virtualisation in PowerShell, and enable virtualisation in BIOS. Then follow the Linux installation instructions below within your WSL2 terminal:
 
 ```powershell
-# In PowerShell (run as Administrator) — one-time WSL2 setup
 wsl --install
-wsl --set-default-version 2    # optional - use WSL2 by default
+wsl --set-default-version 2
 
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart  # enable WSL2 virtualisation (requires reboot)
+# enable WSL2 virtualisation (requires reboot - may also require enabling within BIOS)
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart  
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+
+wsl --install -d Ubuntu
 ```
 
 ```bash
-# Inside WSL2 terminal — same as Linux
+# Inside WSL2 terminal
 conda env create -f environment-linux.yml
 conda activate anomaly-detect
 pip install -e .
 ```
 
-> **Packet capture in WSL2** has caveats. WSL2 uses a virtualised network adapter separate from the Windows host by default. On Windows 11 22H2 or later you can enable mirrored networking (`[wsl2] networkingMode=mirrored` in `.wslconfig`) to share the host interface, but results vary by hardware. If capture is a requirement, use the native Windows installation instead.
+> **Packet capture in WSL2** has caveats. WSL2 uses a virtualised network adapter separate from the Windows host by default. On Windows 11 22H2 or later you can enable mirrored networking (`[wsl2] networkingMode=mirrored` in `.wslconfig`) to share the host interface, but results vary by hardware. If capture is a requirement, use the native Windows installation instead, or some combination of WSL2 and native Windows.
 
 **pip only (no conda)**
 ```bash
@@ -95,9 +98,9 @@ pip install -e .
 
 ### 3. GPU acceleration (optional)
 
-**Apple Silicon** — `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
+**Apple Silicon** - `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
 
-**Linux + NVIDIA GPU (RAPIDS cuML)** — cuML is already included in `environment-linux.yml`. Recreate the environment if needed, then enable GPU in config:
+**Linux + NVIDIA GPU (RAPIDS cuML)** - cuML is already included in `environment-linux.yml`. Recreate the environment if needed, then enable GPU in config:
 
 ```bash
 conda env create -f environment-linux.yml
@@ -106,9 +109,9 @@ conda activate anomaly-detect
 
 Set `use_gpu: true` in `config/config.yml`. Random Forest and SVM training will use GPU-accelerated cuML backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
 
-**Windows native** — `environment-windows.yml` installs `tensorflow-cpu`. All three models train on CPU. No config change is needed; `use_gpu` has no effect on native Windows. For GPU acceleration, use WSL2 virtualisation.
+**Windows native** - `environment-windows.yml` installs `tensorflow-cpu`. All three models train on CPU. No config change is needed; `use_gpu` has no effect on native Windows. For GPU acceleration, use WSL2 virtualisation.
 
-**Windows + WSL2 + NVIDIA GPU (full GPU support)** — follow the Linux cuML instructions above inside your WSL2 terminal. NVIDIA's CUDA drivers for WSL2 are installed at the Windows host level; no separate CUDA install is needed inside WSL2.
+**Windows + WSL2 + NVIDIA GPU** - follow the Linux cuML instructions above inside your WSL2 terminal. NVIDIA's CUDA drivers for WSL2 are installed at the Windows host level; no separate CUDA install is needed inside WSL2.
 
 ---
 
@@ -181,7 +184,7 @@ anomaly-detect train --model autoencoder --input data/processed/sample.csv
 anomaly-detect train --model random_forest --input data/combined/dataset.csv --output data/models/rf/
 anomaly-detect train --model svm --input data/combined/dataset.csv
 
-# k-fold cross-validation (default 5 folds)
+# k-fold cross-validation
 anomaly-detect train --model random_forest --input data/combined/dataset.csv --cv
 anomaly-detect train --model svm --input data/combined/dataset.csv --cv --cv-folds 10
 ```
@@ -245,7 +248,7 @@ anomaly-detect/
 Activate the conda environment for your platform before running tests. The suite relies on platform-specific packages (TensorFlow, tensorflow-metal, cuML) that are not available cross-platform.
 
 ```bash
-# Full suite — recommended before any commit
+# Full suite - recommended before any commit
 python -m pytest tests/
 
 # Verbose output (shows each test name)
@@ -296,12 +299,12 @@ Markers filter tests by platform or resource requirement. They are defined in `p
 
 | Marker | Meaning |
 |---|---|
-| `macos` | macOS (darwin) only — skipped on Linux and Windows |
-| `linux` | Linux only — skipped on macOS and Windows |
-| `windows` | Windows (win32) only — skipped on macOS and Linux |
-| `wsl2` | WSL2 only — skipped unless kernel release contains `microsoft` or `WSL_DISTRO_NAME` is set |
-| `gpu` | Requires a physical GPU — skipped if no devices found |
-| `slow` | Long-running tests — omit with `-m "not slow"` for fast feedback loops |
+| `macos` | macOS (darwin) only - skipped on Linux and Windows |
+| `linux` | Linux only - skipped on macOS and Windows |
+| `windows` | Windows (win32) only - skipped on macOS and Linux |
+| `wsl2` | WSL2 only - skipped unless kernel release contains `microsoft` or `WSL_DISTRO_NAME` is set |
+| `gpu` | Requires a physical GPU - skipped if no devices found |
+| `slow` | Long-running tests - omit with `-m "not slow"` for fast feedback loops |
 
 ```bash
 # Run only the platform tests relevant to this machine
@@ -354,14 +357,14 @@ python -m pytest tests/
 
 ### GPU tests
 
-`@pytest.mark.gpu` tests are skipped automatically when no GPU is present — they do not require any manual flag. To explicitly run or exclude them:
+`@pytest.mark.gpu` tests are skipped automatically when no GPU is present - they do not require any manual flag. To explicitly run or exclude them:
 
 ```bash
 python -m pytest -m gpu        # only GPU tests (skip if no device)
 python -m pytest -m "not gpu"  # skip all GPU tests regardless
 ```
 
-On **macOS**, GPU tests verify Metal device detection via `tensorflow-metal`. On **Linux/WSL2**, they verify CUDA passthrough. Native Windows has no GPU tests — the `@pytest.mark.gpu` tests are skipped on CPU-only installs.
+On **macOS**, GPU tests verify Metal device detection via `tensorflow-metal`. On **Linux/WSL2**, they verify CUDA passthrough. Native Windows has no GPU tests - the `@pytest.mark.gpu` tests are skipped on CPU-only installs.
 
 ### WSL2 packet capture note
 
@@ -377,10 +380,10 @@ Configure output mode in `config/config.yml`:
 
 ```yaml
 siem:
-  mode: file          # Options: file, syslog, both
+  mode: file      # Options: file, syslog, both
   log_path: data/logs/alerts.log
-  log_max_bytes: 10485760    # 10 MB per file
-  log_backup_count: 5        # keep 5 rotated backups
+  log_max_bytes: 10485760     # 10 MB per file
+  log_backup_count: 5
   syslog_host: 127.0.0.1
   syslog_port: 514
 ```
@@ -393,13 +396,7 @@ Point Wazuh's `ossec.conf` at the log file or configure a syslog input to receiv
 
 Version numbers are derived automatically from git tags using `setuptools-scm`. No manual version file editing is needed.
 
-**To release a new version:**
-```bash
-git tag v1.2.5
-git push origin v1.2.5
-```
-
-The version is then accessible at runtime via:
+The version is accessible at runtime via:
 ```bash
 anomaly-detect --version
 ```
@@ -419,5 +416,5 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ## Author
 
-Originally developed by William Jecks as a final year dissertation project.
+Originally developed as a final year dissertation project by William Jecks.
 BSc Cyber Security, De Montfort University.

@@ -1,7 +1,9 @@
+# cli/main.py
+
 # Must be set before TensorFlow/Keras is imported anywhere in the process.
 # Suppress TensorFlow C++ INFO and WARNING messages before TF is imported.
-# These bypass Python logging and print with a different format, polluting
-# the terminal output. Level 2 = suppress INFO + WARNING, keep ERROR + FATAL.
+# These bypass Python logging and print with a different format and look bad.
+# Level 2 = suppress INFO + WARNING, keep ERROR + FATAL.
 import os
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0") 
@@ -24,8 +26,6 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # Suppress StandardScaler feature warning for autoencoders on live data
 warnings.filterwarnings("ignore", message=".*does not have valid feature names.*")
-
-# cli/main.py
 
 import argparse
 

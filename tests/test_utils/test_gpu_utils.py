@@ -1,7 +1,6 @@
 # tests/test_utils/test_gpu_utils.py
 
-import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -34,7 +33,7 @@ def test_cuml_available_reflects_module_flag(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# setup_gpu — idempotency
+# setup_gpu - idempotency
 # ---------------------------------------------------------------------------
 
 def test_setup_gpu_sets_configured_flag():
@@ -61,7 +60,7 @@ def test_setup_gpu_can_be_called_multiple_times_without_error():
 
 
 # ---------------------------------------------------------------------------
-# setup_gpu — platform log branches
+# setup_gpu - platform log branches
 # ---------------------------------------------------------------------------
 
 def test_setup_gpu_logs_wsl2_hint_on_windows(monkeypatch):

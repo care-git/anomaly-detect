@@ -3,7 +3,7 @@
 import json
 
 import matplotlib
-matplotlib.use("Agg")  # non-interactive backend — no display required
+matplotlib.use("Agg")  # non-interactive backend - no display required
 
 import numpy as np
 import pytest
@@ -66,7 +66,7 @@ def test_pretty_print_metadata_outputs_json(capsys):
 
 def test_pretty_print_metadata_warns_on_empty_dict(capsys):
     pretty_print_metadata({})
-    # no output, no crash — warning is logged not printed
+    # no output, no crash - warning is logged not printed
     out = capsys.readouterr().out
     assert out == ""
 
@@ -153,7 +153,7 @@ def test_plot_cv_results_saves_png(tmp_path, cv_results):
 
 
 def test_plot_cv_results_ignores_non_metric_keys(tmp_path, cv_results):
-    """model_type and k_folds are not metric dicts — the plot should not crash."""
+    """model_type and k_folds are not metric dicts - the plot should not crash."""
     out = str(tmp_path / "cv_meta.png")
     plot_cv_results(cv_results, output_path=out)
     assert (tmp_path / "cv_meta.png").exists()

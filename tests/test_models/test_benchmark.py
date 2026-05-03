@@ -1,10 +1,8 @@
 # tests/test_models/test_benchmark.py
 
 import json
-import os
 
 import pandas as pd
-import pytest
 
 from models.benchmark import COMPARISON_COLS, benchmark_models
 
@@ -104,7 +102,8 @@ def test_benchmark_returns_empty_df_without_label_column(normal_csv, monkeypatch
 # ---------------------------------------------------------------------------
 
 def test_benchmark_ae_trains_on_normal_only(labelled_csv, monkeypatch):
-    """AutoencoderModel.train must be called with data that contains only normal samples.
+    """
+    AutoencoderModel.train must be called with data that contains only normal samples.
 
     The labelled fixture has normal data near 0 and anomalous data near 3. If AE
     were trained on mixed data the maximum feature value in its training set would

@@ -56,7 +56,7 @@ def test_subcommand_help_exits_zero(subcommand, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Argument parsing — global options
+# Argument parsing - global options
 # ---------------------------------------------------------------------------
 
 def test_parse_args_config_default(monkeypatch):
@@ -72,7 +72,7 @@ def test_parse_args_config_custom(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Argument parsing — train subcommand
+# Argument parsing - train subcommand
 # ---------------------------------------------------------------------------
 
 def test_parse_args_train_model_and_input(monkeypatch):
@@ -103,7 +103,7 @@ def test_parse_args_train_output_is_optional(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Argument parsing — detect subcommand
+# Argument parsing - detect subcommand
 # ---------------------------------------------------------------------------
 
 def test_parse_args_detect_file_mode(monkeypatch):
@@ -123,7 +123,7 @@ def test_parse_args_detect_live_flag(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Argument parsing — benchmark subcommand
+# Argument parsing - benchmark subcommand
 # ---------------------------------------------------------------------------
 
 def test_parse_args_benchmark_requires_input(monkeypatch):
@@ -141,7 +141,7 @@ def test_parse_args_benchmark_input(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Argument parsing — capture / preprocess / dataset
+# Argument parsing - capture / preprocess / dataset
 # ---------------------------------------------------------------------------
 
 def test_parse_args_capture_interface_and_duration(monkeypatch):
@@ -165,7 +165,7 @@ def test_parse_args_dataset_combine(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Dispatch — main() routes to the correct handler
+# Dispatch - main() routes to the correct handler
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("subcommand,dispatcher_path,extra_argv", [

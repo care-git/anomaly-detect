@@ -4,8 +4,6 @@ import json
 import os
 from unittest.mock import patch
 
-import pytest
-
 from models.trainer import (
     cross_validate_model,
     train_autoencoder,
