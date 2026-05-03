@@ -16,6 +16,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from models.base_model import BaseModel
 from utils.file_saver import save_keras_model, save_pickle, save_json, ensure_dir
 from utils.gpu_utils import setup_gpu
+from utils.metrics_utils import plot_classification_report
 from utils.progress import TrainingSpinner
 from utils.config_loader import get_config
 from utils.logger import get_logger
@@ -241,6 +242,24 @@ class AutoencoderModel(BaseModel):
             })
 
         return results
+
+
+    def plot(self, X, y_true, output_path=None):
+        """
+        Saves an evaluation plot (classification metrics bar chart + confusion matrix).
+
+        Parameters:
+            X (np.ndarray or pd.DataFrame): Input data.
+            y_true (np.ndarray): Ground truth labels.
+            output_path (str, optional): File path to save the plot.
+        """
+        y_pred = self.predict(X)
+        metrics = self.evaluate(X, y_true=y_true)
+        plot_classification_report(
+            metrics, y_true, y_pred,
+            title="Autoencoder Evaluation",
+            output_path=output_path,
+        )
 
 
     def save(self, path, metrics=None):

@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 
 from models.model_loader import instantiate_model
-from utils.metrics_utils import pretty_print_metadata, plot_reconstruction_loss, plot_cv_results
+from utils.metrics_utils import pretty_print_metadata, plot_classification_report, plot_cv_results
 from utils.file_saver import safe_save_path
 from utils.config_loader import get_config
 from utils.logger import get_logger
@@ -41,28 +41,31 @@ def train_autoencoder(input_path, output_path=None):
     logger.info("Loaded training data with shape: %s", df.shape)
 
     if "label" in df.columns:
+        y = df["label"].values
+        X = df.drop(columns=["label"]).values
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
         train_on_anomalous = config.get("training", {}).get("ae_train_on_anomalous", False)
         if not train_on_anomalous:
-            n_before = len(df)
-            df = df[df["label"] == 0]
-            n_dropped = n_before - len(df)
+            mask = y_train == 0
+            n_dropped = int((~mask).sum())
             if n_dropped > 0:
                 logger.warning(
                     "%d anomalous rows detected in labelled dataset and dropped before "
                     "autoencoder training. Set ae_train_on_anomalous: true in config to override.",
                     n_dropped,
                 )
-        X = df.drop(columns=["label"]).values
+            X_train = X_train[mask]
     else:
         X = df.values
-
-    X_train, X_val = train_test_split(X, test_size=0.2, random_state=42)
+        y_val = None
+        X_train, X_val = train_test_split(X, test_size=0.2, random_state=42)
 
     model = instantiate_model("autoencoder", input_dim=X.shape[1])
     model.training_dataset = os.path.abspath(input_path)
     model.train(X_train, X_val=X_val)
 
-    metrics = model.evaluate(X_val)
+    metrics = model.evaluate(X_val, y_true=y_val)
     model_dir = output_path or config['training']['save_dir'] + "autoencoder/autoencoder_model"
     model_dir = safe_save_path(model_dir, extension="")
     model.save(model_dir, metrics=metrics)
@@ -70,10 +73,9 @@ def train_autoencoder(input_path, output_path=None):
     logger.info("\nAutoencoder evaluation metrics:")
     pretty_print_metadata(model.get_metadata(model_dir))
 
-    recon_plot_path = os.path.join(model_dir, "reconstruction_loss.png")
-    recon = model.model.predict(model.scaler.transform(X_val), verbose=0)
-    mse = np.mean(np.square(model.scaler.transform(X_val) - recon), axis=1)
-    plot_reconstruction_loss(mse, threshold=model.threshold, output_path=recon_plot_path)
+    if y_val is not None:
+        plot_path = os.path.join(model_dir, "evaluation_report.png")
+        model.plot(X_val, y_val, output_path=plot_path)
 
     return metrics
 

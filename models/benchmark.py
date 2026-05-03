@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 from models.model_loader import instantiate_model
 from utils.gpu_utils import setup_gpu, release_gpu_memory
-from utils.metrics_utils import plot_classification_report, plot_reconstruction_loss
+from utils.metrics_utils import plot_classification_report
 from utils.file_saver import ensure_dir
 from utils.config_loader import get_config
 from utils.logger import get_logger
@@ -75,12 +75,11 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
                 metrics = model.evaluate(X_test, y_true=y_test)
 
                 if output_dir:
-                    recon = model.model.predict(model.scaler.transform(X_test), verbose=0)
-                    mse = np.mean(np.square(model.scaler.transform(X_test) - recon), axis=1)
-                    plot_reconstruction_loss(
-                        mse, y_true=y_test, threshold=model.threshold,
-                        title="Autoencoder Reconstruction Loss",
-                        output_path=os.path.join(output_dir, "autoencoder_reconstruction_loss.png")
+                    y_pred = model.predict(X_test)
+                    plot_classification_report(
+                        metrics, y_test, y_pred,
+                        title="Autoencoder Evaluation",
+                        output_path=os.path.join(output_dir, "autoencoder_evaluation.png")
                     )
             else:
                 if model_type == "random_forest":

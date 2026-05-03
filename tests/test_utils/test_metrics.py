@@ -12,7 +12,6 @@ from utils.metrics_utils import (
     plot_classification_report,
     plot_cv_results,
     plot_feature_importance,
-    plot_reconstruction_loss,
     pretty_print_metadata,
 )
 
@@ -32,11 +31,6 @@ def binary_labels():
 def sample_metrics():
     return {"accuracy": 0.75, "precision": 0.80, "recall": 0.70, "f1_score": 0.75, "roc_auc": 0.82}
 
-
-@pytest.fixture
-def sample_mse():
-    rng = np.random.default_rng(42)
-    return rng.exponential(scale=0.05, size=50)
 
 
 @pytest.fixture
@@ -115,30 +109,6 @@ def test_plot_feature_importance_respects_top_n(tmp_path):
     out = str(tmp_path / "top2.png")
     plot_feature_importance(importances, names, top_n=2, output_path=out)
     assert (tmp_path / "top2.png").exists()
-
-
-# ---------------------------------------------------------------------------
-# plot_reconstruction_loss
-# ---------------------------------------------------------------------------
-
-def test_plot_reconstruction_loss_saves_png(tmp_path, sample_mse):
-    out = str(tmp_path / "recon.png")
-    plot_reconstruction_loss(sample_mse, output_path=out)
-    assert (tmp_path / "recon.png").exists()
-    assert (tmp_path / "recon.png").stat().st_size > 0
-
-
-def test_plot_reconstruction_loss_with_threshold(tmp_path, sample_mse):
-    out = str(tmp_path / "recon_threshold.png")
-    plot_reconstruction_loss(sample_mse, threshold=0.05, output_path=out)
-    assert (tmp_path / "recon_threshold.png").exists()
-
-
-def test_plot_reconstruction_loss_with_labels(tmp_path, sample_mse):
-    y_true = np.array([0] * 40 + [1] * 10)
-    out = str(tmp_path / "recon_labelled.png")
-    plot_reconstruction_loss(sample_mse, y_true=y_true, threshold=0.1, output_path=out)
-    assert (tmp_path / "recon_labelled.png").exists()
 
 
 # ---------------------------------------------------------------------------

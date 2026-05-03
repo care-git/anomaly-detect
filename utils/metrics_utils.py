@@ -105,46 +105,6 @@ def plot_feature_importance(importances: np.ndarray, feature_names: list, title:
     plt.close()
 
 
-def plot_reconstruction_loss(mse: np.ndarray, y_true=None, threshold: float = None, title: str = "Reconstruction Loss Distribution", output_path: str = None):
-    """
-    Plots the distribution of per-sample reconstruction error (MSE) from the autoencoder.
-
-    Parameters:
-        mse (np.ndarray): Per-sample MSE values.
-        y_true (np.ndarray, optional): Ground truth labels for colour-coding normal vs anomalous.
-        threshold (float, optional): Anomaly threshold to draw as a vertical line.
-        title (str, optional): Plot title.
-        output_path (str, optional): Destination file path to save to, instead of displaying.
-    """
-    sns.set_theme(style="whitegrid")
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    if y_true is not None:
-        y_true = np.asarray(y_true)
-        sns.kdeplot(mse[y_true == 0], label="Normal", fill=True, ax=ax)
-        sns.kdeplot(mse[y_true == 1], label="Anomalous", fill=True, ax=ax)
-        ax.legend()
-    else:
-        sns.kdeplot(mse, fill=True, ax=ax)
-
-    if threshold is not None:
-        ax.axvline(threshold, color="red", linestyle="--", label=f"Threshold ({threshold:.4f})")
-        ax.legend()
-
-    ax.set_title(title)
-    ax.set_xlabel("MSE (Reconstruction Loss)")
-    ax.set_ylabel("Density")
-    plt.tight_layout()
-
-    if output_path:
-        _ensure_output_dir(output_path)
-        plt.savefig(output_path)
-        logger.info("Reconstruction loss plot saved to: %s", output_path)
-    else:
-        plt.show()
-
-    plt.close()
-
 
 def plot_cv_results(cv_results: dict, title: str = "Cross-Validation Results", output_path: str = None):
     """
