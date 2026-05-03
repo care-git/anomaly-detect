@@ -40,17 +40,6 @@ def test_ansi_supported_returns_true_on_linux():
 # GPU / RAPIDS
 # ---------------------------------------------------------------------------
 
-def test_setup_gpu_does_not_log_directml_on_linux():
-    """DirectML is Windows-only — must never appear in Linux log output."""
-    gu._GPU_CONFIGURED = False
-    from unittest.mock import patch
-    with patch("utils.gpu_utils.logger") as mock_logger:
-        setup_gpu()
-    all_calls = " ".join(str(c) for c in mock_logger.info.call_args_list)
-    assert "DirectML" not in all_calls
-    assert "DirectX" not in all_calls
-
-
 def test_setup_gpu_logs_rapids_hint_when_cuml_unavailable():
     """Without cuML, the Linux path should suggest RAPIDS/conda installation."""
     if gu._CUML_AVAILABLE:

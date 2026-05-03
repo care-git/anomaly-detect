@@ -43,17 +43,6 @@ def test_ansi_supported_returns_true_on_macos():
 # GPU / Metal
 # ---------------------------------------------------------------------------
 
-def test_setup_gpu_does_not_log_directml_on_macos(monkeypatch):
-    """DirectML is a Windows-only acceleration path and must never appear on macOS."""
-    gu._GPU_CONFIGURED = False
-    from unittest.mock import patch
-    with patch("utils.gpu_utils.logger") as mock_logger:
-        setup_gpu()
-    all_calls = " ".join(str(c) for c in mock_logger.info.call_args_list)
-    assert "DirectML" not in all_calls
-    assert "DirectX" not in all_calls
-
-
 def test_setup_gpu_does_not_log_wsl2_on_macos(monkeypatch):
     """WSL2 hints are Windows-only and must not appear in macOS log output."""
     gu._GPU_CONFIGURED = False

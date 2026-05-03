@@ -75,19 +75,8 @@ def test_ansi_supported_returns_true_under_wsl2():
 
 
 # ---------------------------------------------------------------------------
-# GPU — WSL2 uses the Linux/RAPIDS path, never the Windows DirectML path
+# GPU — WSL2 uses the Linux/RAPIDS path
 # ---------------------------------------------------------------------------
-
-def test_setup_gpu_does_not_log_directml_under_wsl2():
-    """DirectML is a native-Windows path; WSL2 uses CUDA/RAPIDS instead."""
-    gu._GPU_CONFIGURED = False
-    from unittest.mock import patch
-    with patch("utils.gpu_utils.logger") as mock_logger:
-        setup_gpu()
-    all_calls = " ".join(str(c) for c in mock_logger.info.call_args_list)
-    assert "DirectML" not in all_calls
-    assert "DirectX" not in all_calls
-
 
 def test_setup_gpu_logs_rapids_hint_under_wsl2_when_cuml_unavailable():
     """Without cuML, WSL2 should suggest the Linux/RAPIDS installation path."""

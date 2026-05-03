@@ -47,7 +47,7 @@ def test_ansi_supported_does_not_raise_on_windows():
 
 
 # ---------------------------------------------------------------------------
-# GPU / DirectML
+# GPU — CPU-only on native Windows; WSL2 required for cuML
 # ---------------------------------------------------------------------------
 
 def test_setup_gpu_completes_without_error_on_windows():
@@ -66,21 +66,6 @@ def test_setup_gpu_logs_wsl2_hint_when_no_cuml():
         setup_gpu()
     all_calls = " ".join(str(c) for c in mock_logger.info.call_args_list)
     assert "WSL2" in all_calls or "Linux" in all_calls
-
-
-@pytest.mark.gpu
-def test_setup_gpu_logs_directml_when_gpu_found():
-    """With a DirectX 12-capable GPU present, the log must mention DirectML."""
-    import tensorflow as tf
-    gpus = tf.config.list_physical_devices("GPU")
-    if not gpus:
-        pytest.skip("No GPU devices found — DirectML branch not exercised")
-    gu._GPU_CONFIGURED = False
-    from unittest.mock import patch
-    with patch("utils.gpu_utils.logger") as mock_logger:
-        setup_gpu()
-    all_calls = " ".join(str(c) for c in mock_logger.info.call_args_list)
-    assert "DirectML" in all_calls or "DirectX" in all_calls
 
 
 # ---------------------------------------------------------------------------

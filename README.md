@@ -14,7 +14,7 @@ Designed for use by security analysts, researchers, and engineers needing a flex
 - **k-fold cross-validation** for robust evaluation of any model
 - **Visual evaluation** - classification report charts, feature importance, reconstruction loss distribution, CV results
 - **ROC-AUC, F1, precision, recall** metrics across all models; MSE/MAE reconstruction metrics for the Autoencoder
-- **GPU acceleration** - TensorFlow uses Metal (Apple Silicon), CUDA (Linux), or DirectML (Windows); RF and SVM can use RAPIDS cuML on Linux + NVIDIA
+- **GPU acceleration** - TensorFlow uses Metal (Apple Silicon) or CUDA (Linux/WSL2); RF and SVM can use RAPIDS cuML on Linux + NVIDIA. Windows native runs CPU-only — use WSL2 for full GPU support
 - **Wazuh SIEM integration** - alert forwarding via rotating log file, syslog UDP, or both
 - **Unified CLI** with per-command help, `--config` override, and `--version`
 - Fully customisable via YAML config
@@ -31,7 +31,7 @@ This project uses [Git LFS](https://git-lfs.github.com/) for compiled public dat
 ```bash
 git lfs install
 
-git clone https://github.com/care-git/anomaly-detect.git
+git clone https://github.com/care-git/anomaly-detect.git    # might take a moment
 cd anomaly-detect
 git lfs pull          # download compiled dataset files
 ```
@@ -105,15 +105,7 @@ conda activate anomaly-detect
 
 Set `use_gpu: true` in `config/config.yml`. Random Forest and SVM training will use GPU-accelerated cuML backends automatically. The pipeline falls back to sklearn silently if cuML is not found.
 
-**Windows + DirectML (Autoencoder only)** — DirectML enables DirectX 12 GPU acceleration for the Autoencoder on any modern NVIDIA, AMD, or Intel GPU without requiring CUDA. Uncomment `tensorflow-directml-plugin` in `environment-windows.yml`, recreate the environment, then enable GPU in config:
-
-```bash
-# In environment-windows.yml: uncomment `# - tensorflow-directml-plugin`
-conda env create -f environment-windows.yml
-conda activate anomaly-detect
-```
-
-Set `use_gpu: true` in `config/config.yml`. RF and SVM GPU acceleration is not available on Windows natively — use WSL2 for full cuML support.
+**Windows native** — `environment-windows.yml` installs `tensorflow-cpu`. All three models train on CPU. No config change is needed; `use_gpu` has no effect on native Windows. For GPU acceleration, use WSL2 virtualisation.
 
 **Windows + WSL2 + NVIDIA GPU (full GPU support)** — follow the Linux cuML instructions above inside your WSL2 terminal. NVIDIA's CUDA drivers for WSL2 are installed at the Windows host level; no separate CUDA install is needed inside WSL2.
 
@@ -284,9 +276,9 @@ tests/
 │   ├── test_random_forest.py    # RF training, feature importance, save/load
 │   └── test_svm.py              # SVM all kernels (linear, rbf, poly), save/load
 ├── test_platform/
-│   ├── test_macos.py            # macOS-specific: Metal GPU, ANSI, no DirectML/WSL2 in logs
-│   ├── test_linux.py            # Linux-specific: RAPIDS hint, no DirectML, eth0 config docs
-│   ├── test_windows.py          # Windows-specific: ANSI ctypes, DirectML, WSL2 hint, Npcap
+│   ├── test_macos.py            # macOS-specific: Metal GPU, ANSI, no WSL2 in logs
+│   ├── test_linux.py            # Linux-specific: RAPIDS hint, eth0 config docs
+│   ├── test_windows.py          # Windows-specific: ANSI ctypes, WSL2 hint, Npcap, CPU-only
 │   └── test_wsl2.py             # WSL2-specific: detection signals, Linux paths, CUDA GPU
 ├── test_siem/
 │   └── test_wazuh_forwarder.py  # File/syslog/both modes, dry_run, timestamps, failure paths
@@ -368,7 +360,7 @@ python -m pytest -m gpu        # only GPU tests (skip if no device)
 python -m pytest -m "not gpu"  # skip all GPU tests regardless
 ```
 
-On **macOS**, GPU tests verify Metal device detection via `tensorflow-metal`. On **Linux/WSL2**, they verify CUDA passthrough. On **Windows**, they verify DirectML device enumeration.
+On **macOS**, GPU tests verify Metal device detection via `tensorflow-metal`. On **Linux/WSL2**, they verify CUDA passthrough. Native Windows has no GPU tests — the `@pytest.mark.gpu` tests are skipped on CPU-only installs.
 
 ### WSL2 packet capture note
 

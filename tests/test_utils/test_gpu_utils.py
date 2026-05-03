@@ -99,25 +99,6 @@ def test_setup_gpu_logs_cuml_available_when_present(monkeypatch):
     assert "cuML" in all_info
 
 
-def test_setup_gpu_logs_directml_note_when_gpu_found_on_windows(monkeypatch):
-    gu._GPU_CONFIGURED = False
-    monkeypatch.setattr(gu.sys, "platform", "win32")
-    monkeypatch.setattr(gu, "_CUML_AVAILABLE", False)
-
-    fake_gpu = MagicMock()
-    fake_gpu.name = "/physical_device:GPU:0"
-
-    import tensorflow as tf
-    monkeypatch.setattr(tf.config, "list_physical_devices", lambda *_: [fake_gpu])
-    monkeypatch.setattr(tf.config.experimental, "set_memory_growth", lambda *_: None)
-
-    with patch("utils.gpu_utils.logger") as mock_logger:
-        setup_gpu()
-
-    all_info = " ".join(str(c) for c in mock_logger.info.call_args_list)
-    assert "DirectML" in all_info or "DirectX" in all_info
-
-
 # ---------------------------------------------------------------------------
 # release_gpu_memory
 # ---------------------------------------------------------------------------

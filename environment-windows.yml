@@ -12,10 +12,6 @@
 #   conda activate anomaly-detect
 #   pip install -e .
 #
-# GPU note: tensorflow-directml-plugin enables DirectX 12 GPU acceleration for
-# the Autoencoder on any DirectX 12-capable GPU (NVIDIA, AMD, Intel).
-# Uncomment the line below and set use_gpu: true in config/config.yml to enable.
-# cuML (RF/SVM GPU acceleration) is not available on Windows - use WSL2 for that.
 
 name: anomaly-detect
 channels:
@@ -46,8 +42,4 @@ dependencies:
   - pip
   - pip:
     - tensorflow-cpu               # TODO: pin after Windows verification (run: pip index versions tensorflow-cpu)
-    - tensorflow-directml-plugin   # TODO: pin after Windows verification (run: pip index versions tensorflow-directml-plugin)
-    #                              # Optional: DirectX 12 GPU for Autoencoder
-    #                              # Requires a DirectX 12-capable GPU (NVIDIA/AMD/Intel)
-    #                              # Set use_gpu: true in config/config.yml after enabling
     - setuptools-scm==10.0.5

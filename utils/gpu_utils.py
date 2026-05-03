@@ -43,13 +43,7 @@ def setup_gpu() -> None:
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         if gpus:
-            if sys.platform == "win32":
-                logger.info(
-                    "TensorFlow GPU devices: %s (DirectML - DirectX 12 acceleration).",
-                    [g.name for g in gpus],
-                )
-            else:
-                logger.info("TensorFlow GPU devices: %s", [g.name for g in gpus])
+            logger.info("TensorFlow GPU devices: %s", [g.name for g in gpus])
         else:
             logger.info("TensorFlow: no GPU found - training on CPU.")
     except Exception:
