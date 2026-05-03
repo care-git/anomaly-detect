@@ -74,8 +74,9 @@ WSL2 runs a real Linux kernel inside Windows and gives full CUDA and cuML suppor
 ```powershell
 # In PowerShell (run as Administrator) — one-time WSL2 setup
 wsl --install
-dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 wsl --set-default-version 2    # optional - use WSL2 by default
+
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart  # enable WSL2 virtualisation (requires reboot)
 ```
 
 ```bash
