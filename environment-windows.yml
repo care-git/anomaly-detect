@@ -25,6 +25,7 @@ dependencies:
   - numpy=1.26.4
   - pandas=2.2.3
   - scikit-learn=1.8.0
+  - tensorflow-cpu=2.21.0
   - joblib=1.5.3
 
   # Packet analysis (requires Npcap on Windows - see above)
@@ -41,5 +42,4 @@ dependencies:
   # Build tooling
   - pip
   - pip:
-    - tensorflow-cpu               # TODO: pin after Windows verification (run: pip index versions tensorflow-cpu)
     - setuptools-scm==10.0.5
