@@ -61,7 +61,7 @@ conda activate anomaly-detect
 pip install -e .
 ```
 
-> **Packet capture on Windows** requires [Npcap](https://npcap.com) to be installed before running any `anomaly-detect capture` commands. Install it via winget or download the installer manually from npcap.com:
+> **Packet capture on Windows** requires [Npcap](https://npcap.com) to be installed before running any `anomaly-detect capture` commands. Install it via winget or download the installer manually from the link above:
 > ```powershell
 > winget install --id Npcap.Npcap
 > ```

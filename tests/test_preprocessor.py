@@ -49,7 +49,7 @@ class TestPreprocessor(unittest.TestCase):
         mock_pkt.__len__.return_value = 100
         mock_reader.return_value.__iter__.return_value = [mock_pkt] * 3
 
-        with tempfile.NamedTemporaryFile(suffix=".pcap") as tmp_pcap:
+        with tempfile.NamedTemporaryFile(suffix=".pcap", delete_on_close=False) as tmp_pcap:
             tmp_pcap.write(b"\x00" * 100)  # simulate binary pcap content
             tmp_pcap.flush()
 
