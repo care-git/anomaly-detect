@@ -62,8 +62,18 @@ class SVMModel(BaseModel):
     def _build_model(self, use_linear: bool, max_iter: int, kernel: str = "rbf", use_gpu: bool = False):
         """Constructs the appropriate estimator (cuML or sklearn)."""
         if use_gpu and _CUML_AVAILABLE:
-            # cuML SVC has native probability support — no CalibratedClassifierCV needed
-            return _cuSVC(probability=True, kernel="linear" if use_linear else kernel)
+            if use_linear or kernel == "rbf":
+                # rbf and linear: cuML integrates Platt scaling natively — one GPU pass.
+                return _cuSVC(probability=True, kernel="linear" if use_linear else kernel)
+            # poly/sigmoid: cuML's GPU kernel cache state is CUDA-level — even a fresh
+            # Python clone triggers "Working set already initialized" error on the second fit.
+            # sklearn 1.8 also removed both cv='prefit' and prefit=True from
+            # CalibratedClassifierCV, so no prefit calibration path exists. Fall back to
+            # sklearn SVC, which handles probability calibration correctly for all kernels, but is slower.
+            logger.warning(
+                "cuML SVC does not support probability calibration for kernel='%s' "
+                "— falling back to sklearn SVC.", kernel
+            )
         if use_linear:
             base = LinearSVC(max_iter=max_iter)
             return CalibratedClassifierCV(base, cv=3)
@@ -93,7 +103,7 @@ class SVMModel(BaseModel):
         use_gpu = training_cfg.get("use_gpu", False)
 
         self._use_linear = svm_kernel == "linear"
-        self._using_cuml = use_gpu and _CUML_AVAILABLE
+        self._using_cuml = use_gpu and _CUML_AVAILABLE and (self._use_linear or svm_kernel == "rbf")
         self.input_dim = X.shape[1]
         self.scaler = StandardScaler()
         self.model = self._build_model(self._use_linear, max_iter, kernel=svm_kernel, use_gpu=use_gpu)
