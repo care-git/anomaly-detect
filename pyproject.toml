@@ -57,3 +57,11 @@ filterwarnings = [
   # LinearSVC on toy test fixtures can't converge - not actionable on real data.
   "ignore::sklearn.exceptions.ConvergenceWarning",
 ]
+markers = [
+  "macos: tests that verify macOS-specific behaviour (skip on other platforms)",
+  "linux: tests that verify Linux-specific behaviour (skip on other platforms)",
+  "windows: tests that verify Windows-specific behaviour (skip on other platforms)",
+  "wsl2: tests that verify WSL2-specific behaviour (skip outside WSL2)",
+  "gpu: tests that require a physical GPU to be present",
+  "slow: tests with non-trivial wall-clock runtime",
+]
