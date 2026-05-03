@@ -7,7 +7,7 @@ import warnings
 from cryptography.utils import CryptographyDeprecationWarning
 warnings.filterwarnings("ignore", category=CryptographyDeprecationWarning)
 
-# Suppress Pandas FutureWarning about silent downcasting (fillna) — pandas 2.x only
+# Suppress Pandas FutureWarning about silent downcasting (fillna) - pandas 2.x only
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # Suppress StandardScaler feature warning for autoencoders on live data

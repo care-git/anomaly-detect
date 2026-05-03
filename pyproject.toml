@@ -24,7 +24,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-  # numpy and tensorflow are intentionally excluded — the platform-specific
+  # numpy and tensorflow are intentionally excluded - the platform-specific
   # environment files handle installation with the correct versions for each
   # platform. Pinning them here causes pip install -e . to override the
   # platform build (e.g. numpy 2.x breaks tensorflow-macos 2.16.2 on macOS).
@@ -44,7 +44,7 @@ license = "MIT"
 #   conda install -c rapidsai -c conda-forge -c nvidia cuml
 # Then set use_gpu: true in config/config.yml.
 [project.optional-dependencies]
-gpu = []  # placeholder — see comment above
+gpu = []  # placeholder - see comment above
 
 [project.urls]
 Homepage = "https://github.com/care-git/anomaly-detect"
@@ -54,6 +54,6 @@ anomaly-detect = "cli.main:main"
 
 [tool.pytest.ini_options]
 filterwarnings = [
-  # LinearSVC on toy test fixtures can't converge — not actionable on real data.
+  # LinearSVC on toy test fixtures can't converge - not actionable on real data.
   "ignore::sklearn.exceptions.ConvergenceWarning",
 ]

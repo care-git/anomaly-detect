@@ -103,7 +103,7 @@ class AutoencoderModel(BaseModel):
         if np.isnan(X_scaled).any() or np.isinf(X_scaled).any():
             raise ValueError("Training input contains NaN or Inf after scaling.")
 
-        logger.info("Training Autoencoder on %d samples with %d features", X.shape[0], X.shape[1])
+        logger.info("Training autoencoder | %d samples | %d features", X.shape[0], X.shape[1])
 
         cfg = get_config().get("training", {})
         patience = cfg.get("ae_patience", 5)
@@ -126,14 +126,16 @@ class AutoencoderModel(BaseModel):
         recon = self.model.predict(X_scaled, verbose=0)
         mse = np.mean(np.square(X_scaled - recon), axis=1)
         
-        logger.info("[Train MSE] mean: %.6f | std: %.6f", mse.mean(), mse.std())
         percentile = cfg.get("ae_threshold_percentile", 95)
         self.threshold = float(np.percentile(mse, percentile))
         self._threshold_percentile = percentile
         self._n_training_samples = X.shape[0]
         self._trained_at = datetime.now().isoformat()
 
-        logger.info("Training complete. Anomaly threshold set to %.6f (p%d of train MSE)", self.threshold, percentile)
+        logger.info(
+            "Autoencoder trained - threshold: %.4f (p%d) | train MSE mean: %.4f | std: %.4f",
+            self.threshold, percentile, mse.mean(), mse.std(),
+        )
 
 
     def predict(self, X):
@@ -155,7 +157,7 @@ class AutoencoderModel(BaseModel):
             raise ValueError(f"Expected input dimension {self.input_dim}, got {X.shape[1]}")
 
         X_scaled = self.scaler.transform(X)
-        logger.info("Predicting anomalies on %d samples", X.shape[0])
+        logger.info("Predicting on %d samples", X.shape[0])
         reconstructions = self.model.predict(X_scaled, verbose=0)
         mse = np.mean(np.square(X_scaled - reconstructions), axis=1)
         self.last_mse = mse
@@ -182,9 +184,6 @@ class AutoencoderModel(BaseModel):
         mse = np.mean(np.square(X_scaled - recon), axis=1)
         mae = np.mean(np.abs(X_scaled - recon), axis=1)
 
-        logger.info("[Eval MSE] mean: %.6f | std: %.6f", mse.mean(), mse.std())
-        logger.info("[Eval MAE] mean: %.6f | std: %.6f", mae.mean(), mae.std())
-
         results = {
             "mse_mean": float(mse.mean()),
             "mse_std": float(mse.std()),
@@ -197,20 +196,48 @@ class AutoencoderModel(BaseModel):
             "mae_iqr": float(np.percentile(mae, 75) - np.percentile(mae, 25)),
         }
 
+        logger.info(
+            "Eval MSE - mean: %.4f | median: %.4f | std: %.4f | IQR: %.4f | p95: %.4f",
+            results["mse_mean"], results["mse_median"], results["mse_std"],
+            results["mse_iqr"], results["mse_p95"],
+        )
+        logger.info(
+            "Eval MAE - mean: %.4f | median: %.4f | std: %.4f | IQR: %.4f",
+            results["mae_mean"], results["mae_median"], results["mae_std"], results["mae_iqr"],
+        )
+
         if y_true is not None:
             y_true = np.asarray(y_true)
             y_pred = (mse > self.threshold).astype(int)
 
+            avg_mse_normal = float(mse[y_true == 0].mean()) if (y_true == 0).any() else None
+            avg_mse_anomalous = float(mse[y_true == 1].mean()) if (y_true == 1).any() else None
+            accuracy = accuracy_score(y_true, y_pred)
+            precision = precision_score(y_true, y_pred, zero_division=0)
+            recall = recall_score(y_true, y_pred, zero_division=0)
+            f1 = f1_score(y_true, y_pred, zero_division=0)
+            roc_auc = float(roc_auc_score(y_true, mse)) if len(np.unique(y_true)) > 1 else None
+
+            if avg_mse_normal is not None and avg_mse_anomalous is not None:
+                logger.info(
+                    "Reconstruction - normal MSE: %.4f | anomalous MSE: %.4f",
+                    avg_mse_normal, avg_mse_anomalous,
+                )
+            logger.info(
+                "Evaluation - accuracy: %.4f | precision: %.4f | recall: %.4f | F1: %.4f | ROC-AUC: %.4f",
+                accuracy, precision, recall, f1, roc_auc if roc_auc is not None else 0.0,
+            )
+
             results.update({
-                "avg_mse_normal": float(mse[y_true == 0].mean()) if (y_true == 0).any() else None,
-                "avg_mse_anomalous": float(mse[y_true == 1].mean()) if (y_true == 1).any() else None,
+                "avg_mse_normal": avg_mse_normal,
+                "avg_mse_anomalous": avg_mse_anomalous,
                 "avg_mae_normal": float(mae[y_true == 0].mean()) if (y_true == 0).any() else None,
                 "avg_mae_anomalous": float(mae[y_true == 1].mean()) if (y_true == 1).any() else None,
-                "accuracy": accuracy_score(y_true, y_pred),
-                "precision": precision_score(y_true, y_pred, zero_division=0),
-                "recall": recall_score(y_true, y_pred, zero_division=0),
-                "f1_score": f1_score(y_true, y_pred, zero_division=0),
-                "roc_auc": float(roc_auc_score(y_true, mse)) if len(np.unique(y_true)) > 1 else None,
+                "accuracy": accuracy,
+                "precision": precision,
+                "recall": recall,
+                "f1_score": f1,
+                "roc_auc": roc_auc,
             })
 
         return results
@@ -253,7 +280,7 @@ class AutoencoderModel(BaseModel):
         metadata_path = os.path.join(path, 'metadata.json')
         save_json(self.metadata, metadata_path)
 
-        logger.info("Autoencoder model and metadata saved to: %s", path)
+        logger.info("Saved to: %s", path)
 
 
     def load(self, path):
@@ -277,7 +304,7 @@ class AutoencoderModel(BaseModel):
         self.threshold = self.metadata.get("threshold")
         self.scaler = joblib.load(self.metadata.get("scaler_path"))
 
-        logger.info("Autoencoder model loaded from: %s", path)
+        logger.info("Loaded from: %s", path)
 
 
     def get_metadata(self, path) -> dict:

@@ -29,7 +29,7 @@ def cuml_available() -> bool:
 def setup_gpu() -> None:
     """Configures TF GPU memory growth and logs available compute devices.
 
-    Idempotent — safe to call from multiple sites; configuration and logging
+    Idempotent - safe to call from multiple sites; configuration and logging
     only run once per process. Must be called before any TF GPU operation.
     """
     global _GPU_CONFIGURED
@@ -44,14 +44,14 @@ def setup_gpu() -> None:
         if gpus:
             logger.info("TensorFlow GPU devices: %s", [g.name for g in gpus])
         else:
-            logger.info("TensorFlow: no GPU found — training on CPU.")
+            logger.info("TensorFlow: no GPU found - training on CPU.")
     except Exception:
         pass
 
     if _CUML_AVAILABLE:
-        logger.info("cuML (RAPIDS) available — GPU-accelerated RF/SVM enabled.")
+        logger.info("cuML (RAPIDS) available - GPU-accelerated RF/SVM enabled.")
     else:
-        logger.info("cuML not available — RF/SVM will use sklearn (CPU). "
+        logger.info("cuML not available - RF/SVM will use sklearn (CPU). "
                     "Install RAPIDS via conda to enable GPU support.")
 
     _GPU_CONFIGURED = True
@@ -60,7 +60,7 @@ def setup_gpu() -> None:
 def release_gpu_memory() -> None:
     """Releases TF GPU memory and runs garbage collection.
 
-    Safe to call after any model — is a no-op when TF has not been used.
+    Safe to call after any model - is a no-op when TF has not been used.
     Intended for use in benchmark and training orchestrators between model runs.
     """
     try:

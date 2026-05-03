@@ -8,14 +8,14 @@ Designed for use by security analysts, researchers, and engineers needing a flex
 
 ## Features
 
-- **Three detection models** — Autoencoder (unsupervised), Random Forest, and SVM (supervised)
+- **Three detection models** - Autoencoder (unsupervised), Random Forest, and SVM (supervised)
 - **Live and offline packet capture** via Scapy with ~30 features extracted per packet
-- **Benchmark mode** — trains all three models on the same split and produces a side-by-side comparison
+- **Benchmark mode** - trains all three models on the same split and produces a side-by-side comparison
 - **k-fold cross-validation** for robust evaluation of any model
-- **Visual evaluation** — classification report charts, feature importance, reconstruction loss distribution, CV results
+- **Visual evaluation** - classification report charts, feature importance, reconstruction loss distribution, CV results
 - **ROC-AUC, F1, precision, recall** metrics across all models; MSE/MAE reconstruction metrics for the Autoencoder
-- **GPU acceleration** — TensorFlow uses Metal (M1) or CUDA automatically; RF and SVM can use RAPIDS cuML on Linux + NVIDIA
-- **Wazuh SIEM integration** — alert forwarding via rotating log file, syslog UDP, or both
+- **GPU acceleration** - TensorFlow uses Metal (M1) or CUDA automatically; RF and SVM can use RAPIDS cuML on Linux + NVIDIA
+- **Wazuh SIEM integration** - alert forwarding via rotating log file, syslog UDP, or both
 - **Unified CLI** with per-command help, `--config` override, and `--version`
 - Fully customisable via YAML config
 - Pytest-based unit test suite
@@ -40,14 +40,14 @@ git lfs pull          # download compiled dataset files
 
 Use the file that matches your platform:
 
-**macOS — Apple Silicon (M1/M2/M3)**
+**macOS - Apple Silicon (M1/M2/M3)**
 ```bash
 conda env create -f environment-mac.yml
 conda activate anomaly-detect
 pip install -e .
 ```
 
-**Linux — x86_64**
+**Linux - x86_64**
 ```bash
 conda env create -f environment-linux.yml
 conda activate anomaly-detect
@@ -61,9 +61,9 @@ pip install -e .
 
 ### 3. GPU acceleration (optional)
 
-**Apple Silicon** — `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
+**Apple Silicon** - `tensorflow-metal` is included in `environment-mac.yml` and enables Metal GPU acceleration for the Autoencoder automatically. No config change needed. The `use_gpu` flag in `config/config.yml` controls cuML (RF/SVM only) and should be left `false` on macOS.
 
-**Linux + NVIDIA GPU (RAPIDS cuML)** — uncomment `# - cuml` in `environment-linux.yml`, recreate the environment, then enable GPU in config:
+**Linux + NVIDIA GPU (RAPIDS cuML)** - uncomment `# - cuml` in `environment-linux.yml`, recreate the environment, then enable GPU in config:
 
 ```bash
 # In environment-linux.yml: uncomment `# - cuml` under GPU acceleration
@@ -193,9 +193,9 @@ anomaly-detect/
 ├── siem/                     # Wazuh alert forwarding
 ├── utils/                    # Config loader, logger, progress, GPU helpers, metrics
 ├── tests/                    # Pytest unit test suite
-├── environment-mac.yml       # Conda environment — macOS Apple Silicon
-├── environment-linux.yml     # Conda environment — Linux x86_64
-└── data/                     # Gitignored — captures, processed CSVs, models, logs
+├── environment-mac.yml       # Conda environment - macOS Apple Silicon
+├── environment-linux.yml     # Conda environment - Linux x86_64
+└── data/                     # Gitignored - captures, processed CSVs, models, logs
 ```
 
 ---
@@ -254,7 +254,7 @@ git fetch --tags
 
 ## License
 
-MIT License — see [LICENSE](./LICENSE) for details.
+MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 

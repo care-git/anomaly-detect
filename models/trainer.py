@@ -299,5 +299,4 @@ def run_train_model(args):
             plot_cv_results(cv_results, title=f"{model_type} {k}-Fold CV Results",
                             output_path=os.path.join(output_path, "cv_results.png"))
     else:
-        logger.info("Dispatching training for model: %s", model_type)
         dispatch[model_type](input_path, output_path)

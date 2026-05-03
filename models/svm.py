@@ -33,14 +33,14 @@ class SVMModel(BaseModel):
     Support Vector Machine classifier implementation of BaseModel.
 
     Input features are always standardised via StandardScaler before fitting
-    and inference — this is required for convergence with LinearSVC and
+    and inference - this is required for convergence with LinearSVC and
     significantly improves performance with RBF/poly kernels.
 
     Supports two backends selected via config `training.svm_kernel`:
         - 'linear': uses LinearSVC wrapped in CalibratedClassifierCV for
           probability estimates. Scales to large datasets (O(n) training time).
         - any other value (e.g. 'rbf', 'poly'): uses SVC with that kernel.
-          More expressive but O(n²) training time — avoid on large datasets.
+          More expressive but O(n²) training time - avoid on large datasets.
     """
 
     def __init__(self, **kwargs):
@@ -70,16 +70,16 @@ class SVMModel(BaseModel):
         """Constructs the appropriate estimator (cuML or sklearn)."""
         if use_gpu and _CUML_AVAILABLE:
             if use_linear or kernel == "rbf":
-                # rbf and linear: cuML integrates Platt scaling natively — one GPU pass.
+                # rbf and linear: cuML integrates Platt scaling natively - one GPU pass.
                 return _cuSVC(probability=True, kernel="linear" if use_linear else kernel)
-            # poly/sigmoid: cuML's GPU kernel cache state is CUDA-level — even a fresh
+            # poly/sigmoid: cuML's GPU kernel cache state is CUDA-level - even a fresh
             # Python clone triggers "Working set already initialized" error on the second fit.
             # sklearn 1.8 also removed both cv='prefit' and prefit=True from
             # CalibratedClassifierCV, so no prefit calibration path exists. Fall back to
             # sklearn SVC, which handles probability calibration correctly for all kernels, but is slower.
             logger.warning(
                 "cuML SVC does not support probability calibration for kernel='%s' "
-                "— falling back to sklearn SVC.", kernel
+                "- falling back to sklearn SVC.", kernel
             )
         if use_linear:
             base = LinearSVC(max_iter=max_iter)
@@ -116,7 +116,7 @@ class SVMModel(BaseModel):
         self.model = self._build_model(self._use_linear, max_iter, kernel=svm_kernel, use_gpu=use_gpu)
 
         if use_gpu and not _CUML_AVAILABLE:
-            logger.warning("use_gpu=True but cuML not found — falling back to sklearn SVM.")
+            logger.warning("use_gpu=True but cuML not found - falling back to sklearn SVM.")
 
         X_scaled = self.scaler.fit_transform(X)
         if self._using_cuml:
@@ -135,13 +135,14 @@ class SVMModel(BaseModel):
         self._backend_name = backend_name
         self._n_training_samples = len(X)
 
-        logger.info("Training SVM [%s] on %d samples", backend_name, len(X))
+        logger.info("Training SVM | %d samples | %d features | kernel: %s | %s", len(X), X.shape[1], svm_kernel, backend_name)
         with TrainingSpinner(f"Training SVM [{backend_name}]"):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=ConvergenceWarning)
                 self.model.fit(X_scaled, y)
 
         self._trained_at = datetime.now().isoformat()
+        logger.info("SVM trained")
 
     def predict(self, X):
         """
@@ -153,7 +154,7 @@ class SVMModel(BaseModel):
         Returns:
             np.ndarray: Predicted labels.
         """
-        logger.info("Predicting using SVM model on %d samples", len(X))
+        logger.info("Predicting on %d samples", len(X))
         X_scaled = self.scaler.transform(X)
         if self._using_cuml:
             X_scaled = X_scaled.astype(np.float32)
@@ -195,10 +196,14 @@ class SVMModel(BaseModel):
             y_score = y_pred
         metrics["roc_auc"] = float(roc_auc_score(y_true, y_score)) if len(np.unique(y_true)) > 1 else None
 
-        logger.info("SVM model evaluation complete.")
+        logger.info(
+            "Evaluation - accuracy: %.4f | precision: %.4f | recall: %.4f | F1: %.4f | ROC-AUC: %.4f",
+            metrics["accuracy"], metrics["precision"], metrics["recall"],
+            metrics["f1_score"], metrics["roc_auc"] if metrics["roc_auc"] is not None else 0.0,
+        )
 
         if log_metrics:
-            logger.info("SVM model evaluation:\n%s", classification_report(y_true, y_pred, zero_division=0))
+            logger.info("Classification report:\n%s", classification_report(y_true, y_pred, zero_division=0))
 
         return metrics
 
@@ -253,7 +258,7 @@ class SVMModel(BaseModel):
         metadata_path = os.path.join(path, 'metadata.json')
         save_json(self.metadata, metadata_path)
 
-        logger.info("SVM model and scaler saved to: %s", path)
+        logger.info("Saved to: %s", path)
 
     def load(self, path):
         """
@@ -274,14 +279,14 @@ class SVMModel(BaseModel):
             self._use_linear = self.metadata.get("use_linear", False)
             self._using_cuml = self.metadata.get("using_cuml", False)
             if self._using_cuml and not _CUML_AVAILABLE:
-                logger.warning("Model was trained with cuML but cuML is not installed — predictions may fail.")
+                logger.warning("Model was trained with cuML but cuML is not installed - predictions may fail.")
             scaler_path = self.metadata.get("scaler_path")
             if scaler_path and os.path.exists(scaler_path):
                 self.scaler = joblib.load(scaler_path)
             else:
-                logger.warning("Scaler not found in metadata — predictions may be inaccurate.")
+                logger.warning("Scaler not found in metadata - predictions may be inaccurate.")
 
-        logger.info("SVM model loaded from: %s", path)
+        logger.info("Loaded from: %s", path)
 
     def get_metadata(self, path) -> dict:
         """

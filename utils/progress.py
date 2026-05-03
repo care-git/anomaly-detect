@@ -34,7 +34,7 @@ class TrainingSpinner:
 
     Usage:
         with TrainingSpinner("Training SVM") as spinner:
-            model.fit(X, y)                          # no updates — elapsed only
+            model.fit(X, y)                          # no updates - elapsed only
 
         with TrainingSpinner("Training RF") as spinner:
             for i in range(n):
@@ -86,7 +86,7 @@ class TrainingSpinner:
         elapsed_str = f"{int(elapsed // 60):02d}:{int(elapsed % 60):02d}"
         mark = "✓" if success else "✗"
         # \033[K clears from the cursor to end of line, handling any length of previous content
-        sys.stderr.write(f"\r{mark}  {self._desc} — done in {elapsed_str}\033[K\n")
+        sys.stderr.write(f"\r{mark}  {self._desc} - done in {elapsed_str}\033[K\n")
         sys.stderr.flush()
 
     def __enter__(self) -> "TrainingSpinner":

@@ -50,7 +50,7 @@ class RandomForestModel(BaseModel):
         self._n_training_samples = None
         self._n_estimators = None
         self._backend = None
-        logger.info("Initialised Random Forest model with params: %s", rf_kwargs)
+        logger.debug("Initialised random forest with params: %s", rf_kwargs)
 
     def train(self, X, y=None, **kwargs):
         """
@@ -70,15 +70,15 @@ class RandomForestModel(BaseModel):
         use_gpu = training_cfg.get("use_gpu", False)
 
         if use_gpu and _CUML_AVAILABLE:
-            logger.info("Training Random Forest [cuML GPU] with %d estimators on %d samples", n_estimators, len(X))
+            logger.info("Training random forest | %d samples | %d features | %d trees | cuML", len(X), X.shape[1], n_estimators)
             self.model = _cuRF(n_estimators=n_estimators)
             with TrainingSpinner("Training Random Forest [GPU]") as spinner:
                 self.model.fit(np.asarray(X, dtype=np.float32), np.asarray(y, dtype=np.float32))
             self._using_cuml = True
         else:
             if use_gpu and not _CUML_AVAILABLE:
-                logger.warning("use_gpu=True but cuML not found — falling back to sklearn RandomForest.")
-            logger.info("Training %d trees [sklearn CPU] on %d samples", n_estimators, len(X))
+                logger.warning("use_gpu=True but cuML not found - falling back to sklearn random forest.")
+            logger.info("Training random forest | %d samples | %d features | %d trees | sklearn", len(X), X.shape[1], n_estimators)
             self.model = RandomForestClassifier(
                 n_estimators=n_estimators,
                 warm_start=True,
@@ -97,7 +97,7 @@ class RandomForestModel(BaseModel):
         self._n_training_samples = len(X)
         self._backend = "cuML RandomForestClassifier" if self._using_cuml else "sklearn RandomForestClassifier"
         self._trained_at = datetime.now().isoformat()
-        logger.info("Training complete.")
+        logger.info("Random forest trained")
 
     def predict(self, X):
         """
@@ -109,7 +109,7 @@ class RandomForestModel(BaseModel):
         Returns:
             np.ndarray: Predicted labels.
         """
-        logger.info("Predicting using trained Random Forest model on %d samples", len(X))
+        logger.info("Predicting on %d samples", len(X))
         X_in = np.asarray(X, dtype=np.float32) if self._using_cuml else X
         return np.asarray(self.model.predict(X_in))
 
@@ -139,10 +139,14 @@ class RandomForestModel(BaseModel):
             "roc_auc": float(roc_auc_score(y_true, y_proba)) if len(np.unique(y_true)) > 1 else None,
         }
 
-        logger.info("Random Forest model evaluation complete.")
+        logger.info(
+            "Evaluation - accuracy: %.4f | precision: %.4f | recall: %.4f | F1: %.4f | ROC-AUC: %.4f",
+            metrics["accuracy"], metrics["precision"], metrics["recall"],
+            metrics["f1_score"], metrics["roc_auc"] if metrics["roc_auc"] is not None else 0.0,
+        )
 
         if log_metrics:
-            logger.info("Random Forest model evaluation:\n%s", classification_report(y_true, y_pred, zero_division=0))
+            logger.info("Classification report:\n%s", classification_report(y_true, y_pred, zero_division=0))
 
         return metrics
     
@@ -166,7 +170,7 @@ class RandomForestModel(BaseModel):
         importances = np.asarray(self.model.feature_importances_)
         names = feature_names or [f"feature_{i}" for i in range(len(importances))]
         importance_path = output_path.replace(".png", "_feature_importance.png") if output_path else None
-        plot_feature_importance(importances, names, title=f"{title} — Feature Importance", output_path=importance_path)
+        plot_feature_importance(importances, names, title=f"{title} - Feature Importance", output_path=importance_path)
 
     def save(self, path,  metrics=None):
         """
@@ -203,7 +207,7 @@ class RandomForestModel(BaseModel):
         metadata_path = os.path.join(path, 'metadata.json')
         save_json(self.metadata, metadata_path)
 
-        logger.info("Random Forest model, metadata, and metrics plot saved to: %s", path)
+        logger.info("Saved to: %s", path)
 
     def load(self, path):
         """
@@ -223,9 +227,9 @@ class RandomForestModel(BaseModel):
             self.input_dim = self.metadata.get("input_dim")
             self._using_cuml = self.metadata.get("using_cuml", False)
             if self._using_cuml and not _CUML_AVAILABLE:
-                logger.warning("Model was trained with cuML but cuML is not installed — predictions may fail.")
+                logger.warning("Model was trained with cuML but cuML is not installed - predictions may fail.")
 
-        logger.info("Random Forest model loaded from: %s", path)
+        logger.info("Loaded from: %s", path)
 
     def get_metadata(self, path) -> dict:
         """

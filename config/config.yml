@@ -35,12 +35,12 @@ training:
   # Lower values = more sensitive (more false positives); higher = more conservative.
   ae_threshold_percentile: 95
 
-  # SVM backend — 'linear' uses LinearSVC (faster, O(n) training time) or
+  # SVM backend - 'linear' uses LinearSVC (faster, O(n) training time) or
   # any sklearn SVC kernel string e.g. 'rbf', 'poly' (O(n²), more expressive)
   svm_kernel: linear
   svm_max_iter: 2000
 
-  # GPU acceleration — requires RAPIDS cuML 
+  # GPU acceleration - requires RAPIDS cuML 
   # conda install: conda install -c rapidsai -c conda-forge -c nvidia cuml
   # When true and cuML is present, RF and SVM use GPU-accelerated backends.
   # Falls back to sklearn silently if cuML is not installed.

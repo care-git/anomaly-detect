@@ -201,7 +201,7 @@ def preprocess_file(pcap_path: str, batch_size: int,  label: int | None) -> pd.D
             df_list.append(df_clean)
 
         if not df_list:
-            logger.error("No usable packets extracted — final DataFrame is empty.")
+            logger.error("No usable packets extracted - final DataFrame is empty.")
             return pd.DataFrame()
 
         df_final = pd.concat(df_list, ignore_index=True)

@@ -1,5 +1,5 @@
 # environment-linux.yml
-# Linux — x86_64 (tested on Arch Linux, Ryzen 5 5600x + NVIDIA RTX 3060)
+# Linux - x86_64 (tested on Arch Linux, Ryzen 5 5600x + NVIDIA RTX 3060)
 #
 # Usage:
 #   conda env create -f environment-linux.yml
@@ -36,7 +36,7 @@ dependencies:
   - pyyaml=6.0.3
   - tqdm=4.67.3
 
-  # GPU acceleration (optional — requires NVIDIA GPU + CUDA drivers)
+  # GPU acceleration (optional - requires NVIDIA GPU + CUDA drivers)
   # Set use_gpu: true in config/config.yml to enable.
   - cuml<=26.04.00
 
