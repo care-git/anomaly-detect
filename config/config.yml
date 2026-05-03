@@ -1,6 +1,6 @@
 # === Capture Settings ===
 capture:
-  interface: en0
+  interface: eth0
   duration: 30
   packet_count: 100
   output_path: data/captures/capture.pcap
