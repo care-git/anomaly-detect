@@ -1,5 +1,17 @@
-# Suppress Scapy runtime warnings
+# Must be set before TensorFlow/Keras is imported anywhere in the process.
+# Suppress TensorFlow C++ INFO and WARNING messages before TF is imported.
+# These bypass Python logging and print with a different format, polluting
+# the terminal output. Level 2 = suppress INFO + WARNING, keep ERROR + FATAL.
+import os
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0") 
+
+# Suppress TF and absl Python-side loggers before any TF import.
 import logging
+logging.getLogger("tensorflow").setLevel(logging.ERROR)
+logging.getLogger("absl").setLevel(logging.ERROR)
+
+# Suppress Scapy runtime warnings
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
 # Suppress deprecation warnings from Scapy-imported cryptography library
