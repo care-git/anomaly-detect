@@ -9,9 +9,9 @@ from core.capture import capture_packets, live_packet_monitor
 
 class TestCaptureModule(unittest.TestCase):
 
+    @patch("core.capture.save_pcap")
     @patch("core.capture.sniff")
-    def test_capture_packets_calls_sniff(self, mock_sniff):
-        # Setup
+    def test_capture_packets_calls_sniff(self, mock_sniff, mock_save):
         mock_sniff.side_effect = lambda **kwargs: kwargs['prn']("mock_packet")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
