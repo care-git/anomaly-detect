@@ -38,9 +38,9 @@ dependencies:
 
   # GPU acceleration (optional - requires NVIDIA GPU + CUDA drivers)
   # Set use_gpu: true in config/config.yml to enable.
-  - cuml<=26.04.00
+  - cuml>=24.02,<=26.04.00
 
   # Build tooling
   - pip
   - pip:
-    - setuptools-scm
+    - setuptools-scm==10.0.5

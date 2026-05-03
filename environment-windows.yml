@@ -45,8 +45,9 @@ dependencies:
   # Build tooling
   - pip
   - pip:
-    - tensorflow-cpu               # CPU-only TensorFlow
-    - tensorflow-directml-plugin   # Optional: DirectX 12 GPU for Autoencoder
+    - tensorflow-cpu               # TODO: pin after Windows verification (run: pip index versions tensorflow-cpu)
+    - tensorflow-directml-plugin   # TODO: pin after Windows verification (run: pip index versions tensorflow-directml-plugin)
+    #                              # Optional: DirectX 12 GPU for Autoencoder
     #                              # Requires a DirectX 12-capable GPU (NVIDIA/AMD/Intel)
     #                              # Set use_gpu: true in config/config.yml after enabling
-    - setuptools-scm
+    - setuptools-scm==10.0.5
