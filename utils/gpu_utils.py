@@ -45,12 +45,17 @@ def setup_gpu() -> None:
         pass
 
     if _CUML_AVAILABLE:
-        logger.info("cuML (RAPIDS) available - GPU-accelerated RF/SVM enabled.")
+        from utils.config_loader import get_config
+        use_gpu = get_config().get("training", {}).get("use_gpu", False)
+        if use_gpu:
+            logger.info("cuML (RAPIDS) available - GPU-accelerated RF/SVM enabled via config.")
+        else:
+            logger.info("cuML (RAPIDS) available - GPU-accelerated RF/SVM disabled via config.")
     else:
         if sys.platform == "win32":
             logger.info(
                 "cuML not available - RF/SVM will use sklearn (CPU). "
-                "cuML requires Linux or WSL2; see README for the WSL2 installation path."
+                "cuML requires Linux or WSL2."
             )
         else:
             logger.info(

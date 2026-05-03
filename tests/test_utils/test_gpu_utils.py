@@ -91,11 +91,26 @@ def test_setup_gpu_logs_cuml_available_when_present(monkeypatch):
     gu._GPU_CONFIGURED = False
     monkeypatch.setattr(gu, "_CUML_AVAILABLE", True)
 
-    with patch("utils.gpu_utils.logger") as mock_logger:
+    with patch("utils.gpu_utils.logger") as mock_logger, \
+         patch("utils.config_loader.get_config", return_value={"training": {"use_gpu": True}}):
         setup_gpu()
 
     all_info = " ".join(str(c) for c in mock_logger.info.call_args_list)
     assert "cuML" in all_info
+    assert "enabled via config" in all_info
+
+
+def test_setup_gpu_logs_cuml_disabled_via_config(monkeypatch):
+    gu._GPU_CONFIGURED = False
+    monkeypatch.setattr(gu, "_CUML_AVAILABLE", True)
+
+    with patch("utils.gpu_utils.logger") as mock_logger, \
+         patch("utils.config_loader.get_config", return_value={"training": {"use_gpu": False}}):
+        setup_gpu()
+
+    all_info = " ".join(str(c) for c in mock_logger.info.call_args_list)
+    assert "cuML" in all_info
+    assert "disabled via config" in all_info
 
 
 # ---------------------------------------------------------------------------
