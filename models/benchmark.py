@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from models.model_loader import instantiate_model
+from utils.gpu_utils import setup_gpu, release_gpu_memory
 from utils.metrics_utils import plot_classification_report, plot_reconstruction_loss
 from utils.file_saver import ensure_dir
 from utils.config_loader import get_config
@@ -59,6 +60,8 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
     feature_names = list(df.drop(columns=["label"]).columns)
     rows = []
 
+    setup_gpu()
+
     for model_type in ALL_MODELS:
         logger.info("Benchmarking model: %s", model_type)
         try:
@@ -98,6 +101,8 @@ def benchmark_models(input_path: str, output_dir: str = None, test_size: float =
         except Exception as e:
             logger.error("Benchmark failed for %s: %s", model_type, e)
             rows.append({"model": model_type, "error": str(e)})
+        finally:
+            release_gpu_memory()
 
     comparison = pd.DataFrame(rows).set_index("model")
     display = comparison.fillna("N/A")
