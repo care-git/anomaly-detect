@@ -31,9 +31,9 @@ This project uses [Git LFS](https://git-lfs.github.com/) for compiled public dat
 ```bash
 git lfs install
 
-git clone https://github.com/care-git/anomaly-detect.git    # might take a moment
+git clone https://github.com/care-git/anomaly-detect.git
 cd anomaly-detect
-git lfs pull          # download compiled dataset files (optional)
+git lfs pull
 ```
 
 ### 2. Create the environment
