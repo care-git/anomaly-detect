@@ -4,6 +4,10 @@ A modular, machine learning-based threat detection pipeline for identifying anom
 
 Designed for use by security analysts, researchers, and engineers needing a flexible framework for real-time or file-based detection of network threats.
 
+Most machine learning-based intrusion detection research achieves strong benchmark results and stops there. The gap between a well-evaluated model and a system that captures live traffic, handles real-world datasets, integrates with operational tooling, and can be extended without rewriting the core logic is rarely addressed, as most academic implementations were never designed with deployment in mind.
+
+This project was built to close that gap. Detection accuracy matters, but so does modularity, configurability, and SIEM integration. This pipeline treats these as first-class requirements alongside model performance, and the result is a framework that security engineers and researchers can actually run, configure, and build on, rather than one that exists solely to reproduce benchmark figures.
+
 ---
 
 ## Features
